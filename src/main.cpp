@@ -35,6 +35,16 @@ json decode_bencoded_value(const std::string& encoded_value, size_t &begin) {
         }
         begin++;
         return array;
+    } else if(encoded_value[begin] == 'd') {
+        json object = json::object();
+        begin++;
+        while(encoded_value[begin] != 'e') {
+            json key = decode_bencoded_value(encoded_value, begin);
+            json value = decode_bencoded_value(encoded_value, begin);
+            object[key] = value;
+        }
+        begin++;
+        return object;
     } else {
         throw std::runtime_error("Unhandled encoded value: " + encoded_value);
     }
