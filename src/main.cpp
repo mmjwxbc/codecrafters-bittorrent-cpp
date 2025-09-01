@@ -8,30 +8,30 @@
 
 using json = nlohmann::json;
 
-json decode_bencoded_value(const std::string& encoded_value) {
-    if (std::isdigit(encoded_value[0])) {
+json decode_bencoded_value(const std::string& encoded_value, size_t &begin) {
+    if (std::isdigit(encoded_value[begin])) {
         // Example: "5:hello" -> "hello"
-        size_t colon_index = encoded_value.find(':');
+        size_t colon_index = encoded_value.find(':', begin);
         if (colon_index != std::string::npos) {
-            std::string number_string = encoded_value.substr(0, colon_index);
+            std::string number_string = encoded_value.substr(begin, colon_index - begin);
             int64_t number = std::atoll(number_string.c_str());
             std::string str = encoded_value.substr(colon_index + 1, number);
+            begin = colon_index + number + 1;
             return json(str);
         } else {
             throw std::runtime_error("Invalid encoded value: " + encoded_value);
         }
-    } else if(encoded_value[0] == 'i') {
-        size_t e_index = encoded_value.find('e');
-        int64_t number = std::atoll(encoded_value.substr(1, e_index - 1).c_str());
+    } else if(encoded_value[begin] == 'i') {
+        size_t e_index = encoded_value.find('e', begin);
+        int64_t number = std::atoll(encoded_value.substr(begin + 1, e_index - begin - 1).c_str());
+        begin = e_index + 1;
         return json(number);
-    } else if(encoded_value[0] == 'l') {
+    } else if(encoded_value[begin] == 'l') {
         json array = json::array();
-        size_t e_index = encoded_value.find('e');
-        int begin = 1;
+        begin++;
         while(encoded_value[begin] != 'e') {
-            json value = decode_bencoded_value(encoded_value.substr(begin));
+            json value = decode_bencoded_value(encoded_value, begin);
             array.push_back(value);
-            begin = e_index + 1;
         }
         return array;
     } else {
@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::string command = argv[1];
-
+    size_t begin = 0;
     if (command == "decode") {
         if (argc < 3) {
             std::cerr << "Usage: " << argv[0] << " decode <encoded_value>" << std::endl;
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 
         // Uncomment this block to pass the first stage
         std::string encoded_value = argv[2];
-        json decoded_value = decode_bencoded_value(encoded_value);
+        json decoded_value = decode_bencoded_value(encoded_value, begin);
         std::cout << decoded_value.dump() << std::endl;
     } else {
         std::cerr << "unknown command: " << command << std::endl;
