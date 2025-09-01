@@ -135,6 +135,17 @@ int main(int argc, char *argv[]) {
     std::cout << "Tracker URL: " << announce_url << "\n";
     std::cout << "Length: " << length << "\n";
     std::cout << "Info Hash: " << info_hash << "\n";
+    std::cout << "Piece Length: " <<  object.at("info").at("piece length") << "\n";
+    std::cout << "Piece Hashes:" << "\n";
+    std::string hashes  = object.at("info").at("pieces").get<std::string>();
+    std::vector<uint8_t> pieces(hashes.begin(), hashes.end());
+    for (size_t i = 0; i < pieces.size(); ++i) {
+        if(i % 20 == 0 && i) {
+            std::cout << "\n";
+        }
+        printf("%02x", pieces[i]);
+    }
+    std::cout << "\n";
   } else {
     std::cerr << "unknown command: " << command << std::endl;
     return 1;
