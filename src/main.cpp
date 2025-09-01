@@ -28,8 +28,8 @@ json decode_bencoded_value(const std::string& encoded_value) {
         json array;
         size_t e_index = encoded_value.find('e');
         int begin = 1;
-        while(encoded_value[0] != 'e') {
-            json value = decode_bencoded_value(encoded_value.substr(begin, e_index - 1));
+        while(encoded_value[begin] != 'e') {
+            json value = decode_bencoded_value(encoded_value.substr(begin));
             array.push_back(value);
             begin = e_index + 1;
         }
