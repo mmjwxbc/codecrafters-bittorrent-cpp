@@ -33,6 +33,7 @@ json decode_bencoded_value(const std::string& encoded_value, size_t &begin) {
             json value = decode_bencoded_value(encoded_value, begin);
             array.push_back(value);
         }
+        begin++;
         return array;
     } else {
         throw std::runtime_error("Unhandled encoded value: " + encoded_value);
@@ -61,8 +62,12 @@ int main(int argc, char* argv[]) {
 
         // Uncomment this block to pass the first stage
         std::string encoded_value = argv[2];
-        json decoded_value = decode_bencoded_value(encoded_value, begin);
-        std::cout << decoded_value.dump() << std::endl;
+        json array = json::array();
+        while(begin < encoded_value.size()) {
+            json decoded_value = decode_bencoded_value(encoded_value, begin);
+            array.push_back(decoded_value);
+        }
+        std::cout << array[0].dump() << std::endl;
     } else {
         std::cerr << "unknown command: " << command << std::endl;
         return 1;
