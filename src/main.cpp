@@ -24,6 +24,16 @@ json decode_bencoded_value(const std::string& encoded_value) {
         size_t e_index = encoded_value.find('e');
         int64_t number = std::atoll(encoded_value.substr(1, e_index - 1).c_str());
         return json(number);
+    } else if(encoded_value[0] == 'l') {
+        json array;
+        size_t e_index = encoded_value.find('e');
+        int begin = 1;
+        while(encoded_value[0] != 'e') {
+            json value = decode_bencoded_value(encoded_value.substr(begin, e_index - 1));
+            array.push_back(value);
+            begin = e_index + 1;
+        }
+        return array;
     } else {
         throw std::runtime_error("Unhandled encoded value: " + encoded_value);
     }
