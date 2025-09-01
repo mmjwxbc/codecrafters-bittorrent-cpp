@@ -25,7 +25,7 @@ json decode_bencoded_value(const std::string& encoded_value) {
         int64_t number = std::atoll(encoded_value.substr(1, e_index - 1).c_str());
         return json(number);
     } else if(encoded_value[0] == 'l') {
-        json array;
+        json array = json::array();
         size_t e_index = encoded_value.find('e');
         int begin = 1;
         while(encoded_value[begin] != 'e') {
