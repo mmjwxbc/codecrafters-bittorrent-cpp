@@ -52,42 +52,31 @@ json decode_bencoded_value(const std::string &encoded_value, size_t &begin) {
   }
 }
 
-std::vector<uint8_t> extract_info_bytes(const std::string& bencoded_data) {
-    size_t pos = 0;
-
-    if (bencoded_data[pos] != 'd') {
-        throw std::runtime_error("Invalid torrent file: top-level not a dictionary");
+std::string encode_bencode_value(const json& value) {
+    json::value_t type = value.type();
+    if (type == json::value_t::string) {
+        std::string str = value.get<std::string>();
+        return std::to_string(str.size()) + ":" + str;
     }
-    pos++;
-
-    while (pos < bencoded_data.size()) {
-        size_t colon = bencoded_data.find(':', pos);
-        if (colon == std::string::npos) throw std::runtime_error("Invalid bencode key");
-
-        std::string key = bencoded_data.substr(pos, colon - pos);
-        size_t key_len = std::stoul(key);
-        pos = colon + 1 + key_len;
-
-        if (bencoded_data.substr(colon + 1, key_len) == "info") {
-            size_t info_start = colon + 1 + key_len;
-            int dict_level = 0;
-            size_t i = info_start;
-            for (; i < bencoded_data.size(); i++) {
-                if (bencoded_data[i] == 'd') dict_level++;
-                else if (bencoded_data[i] == 'e') {
-                    dict_level--;
-                    if (dict_level == 0) break;
-                }
-            }
-            if (dict_level != 0) throw std::runtime_error("Unmatched dictionary in info");
-
-            std::vector<uint8_t> info_bytes(bencoded_data.begin() + info_start,
-                                            bencoded_data.begin() + i + 1);
-            return info_bytes;
+    else if (type == json::value_t::number_integer) {
+        return "i" + std::to_string(value.get<int64_t>()) + "e";
+    }
+    else if (type == json::value_t::array) {
+        std::string result = "l";
+        for (const auto& item : value) {
+            result += encode_bencode_value(item);
         }
+        return result + "e";
+    }
+    else if (type == json::value_t::object) {
+        std::string result = "d";
+        for (auto it = value.begin(); it != value.end(); ++it) {
+            result += encode_bencode_value(it.key()) + encode_bencode_value(it.value());
+        }
+        return result + "e";
     }
 
-    throw std::runtime_error("Info dictionary not found");
+    return "";
 }
 
 int main(int argc, char *argv[]) {
@@ -140,8 +129,9 @@ int main(int argc, char *argv[]) {
     }
     std::string announce_url = object.at("announce").get<std::string>();
     int64_t length = object.at("info").at("length").get<int64_t>();
-    std::vector<uint8_t> info_value = extract_info_bytes(encoded_value);
-    std::string info_hash = sha1(info_value);
+    std::string info_value = encode_bencode_value(object.at("info"));
+    std::vector<uint8_t> bytes(info_value.begin(), info_value.end());
+    std::string info_hash = sha1(bytes);
     std::cout << "Tracker URL: " << announce_url << "\n";
     std::cout << "Length: " << length << "\n";
     std::cout << "Info Hash: " << info_hash << "\n";
