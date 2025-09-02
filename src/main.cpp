@@ -6,25 +6,27 @@
 #include <string>
 #include <vector>
 #include "util.hpp"
+#include <curl/curl.h>
+#include <openssl/sha.h>
 using json = nlohmann::json;
-
-json decode_bencoded_value(const std::string &encoded_value, size_t &begin) {
-  if (std::isdigit(encoded_value[begin])) {
+using namespace std;
+json decode_bencoded_value(const string &encoded_value, size_t &begin) {
+  if (isdigit(encoded_value[begin])) {
     // Example: "5:hello" -> "hello"
     size_t colon_index = encoded_value.find(':', begin);
-    if (colon_index != std::string::npos) {
-      std::string number_string =
+    if (colon_index != string::npos) {
+      string number_string =
           encoded_value.substr(begin, colon_index - begin);
-      int64_t number = std::atoll(number_string.c_str());
-      std::string str = encoded_value.substr(colon_index + 1, number);
+      int64_t number = atoll(number_string.c_str());
+      string str = encoded_value.substr(colon_index + 1, number);
       begin = colon_index + number + 1;
       return json(str);
     } else {
-      throw std::runtime_error("Invalid encoded value: " + encoded_value);
+      throw runtime_error("Invalid encoded value: " + encoded_value);
     }
   } else if (encoded_value[begin] == 'i') {
     size_t e_index = encoded_value.find('e', begin);
-    int64_t number = std::atoll(
+    int64_t number = atoll(
         encoded_value.substr(begin + 1, e_index - begin - 1).c_str());
     begin = e_index + 1;
     return json(number);
@@ -48,75 +50,19 @@ json decode_bencoded_value(const std::string &encoded_value, size_t &begin) {
     begin++;
     return object;
   } else {
-    throw std::runtime_error("Unhandled encoded value: " + encoded_value);
+    throw runtime_error("Unhandled encoded value: " + encoded_value);
   }
 }
 
-std::string encode_bencode_value(const json& value) {
-    json::value_t type = value.type();
-    if (type == json::value_t::string) {
-        std::string str = value.get<std::string>();
-        return std::to_string(str.size()) + ":" + str;
-    }
-    else if (type == json::value_t::number_integer) {
-        return "i" + std::to_string(value.get<int64_t>()) + "e";
-    }
-    else if (type == json::value_t::array) {
-        std::string result = "l";
-        for (const auto& item : value) {
-            result += encode_bencode_value(item);
-        }
-        return result + "e";
-    }
-    else if (type == json::value_t::object) {
-        std::string result = "d";
-        for (auto it = value.begin(); it != value.end(); ++it) {
-            result += encode_bencode_value(it.key()) + encode_bencode_value(it.value());
-        }
-        return result + "e";
-    }
-
-    return "";
-}
-
-int main(int argc, char *argv[]) {
-  // Flush after every std::cout / std::cerr
-  std::cout << std::unitbuf;
-  std::cerr << std::unitbuf;
-
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " decode <encoded_value>" << std::endl;
-    return 1;
-  }
-
-  std::string command = argv[1];
-  size_t begin = 0;
-  if (command == "decode") {
-    if (argc < 3) {
-      std::cerr << "Usage: " << argv[0] << " decode <encoded_value>"
-                << std::endl;
-      return 1;
-    }
-    // You can use print statements as follows for debugging, they'll be visible
-    // when running tests.
-    std::cerr << "Logs from your program will appear here!" << std::endl;
-
-    // Uncomment this block to pass the first stage
-    std::string encoded_value = argv[2];
-    json array = json::array();
-    while (begin < encoded_value.size()) {
-      json decoded_value = decode_bencoded_value(encoded_value, begin);
-      array.push_back(decoded_value);
-    }
-    std::cout << array[0].dump() << std::endl;
-  } else if (command == "info") {
-    std::ifstream file(argv[2], std::ios::binary); // 二进制模式避免换行符转换
+json decode_torrent_file(char* filename) {
+    size_t begin = 0;
+    ifstream file(filename, ios::binary);
     if (!file) {
-      std::cerr << "Failed to open file\n";
+      cerr << "Failed to open file\n";
       return 1;
     }
-    std::string encoded_value((std::istreambuf_iterator<char>(file)),
-                              std::istreambuf_iterator<char>());
+    string encoded_value((istreambuf_iterator<char>(file)),
+                              istreambuf_iterator<char>());
     json object = json::object();
     if (encoded_value[begin] == 'd') {
       begin++;
@@ -127,27 +73,147 @@ int main(int argc, char *argv[]) {
       }
       begin++;
     }
-    std::string announce_url = object.at("announce").get<std::string>();
+    return object;
+}
+
+string encode_bencode_value(const json& value) {
+    json::value_t type = value.type();
+    if (type == json::value_t::string) {
+        string str = value.get<string>();
+        return to_string(str.size()) + ":" + str;
+    }
+    else if (type == json::value_t::number_integer) {
+        return "i" + to_string(value.get<int64_t>()) + "e";
+    }
+    else if (type == json::value_t::array) {
+        string result = "l";
+        for (const auto& item : value) {
+            result += encode_bencode_value(item);
+        }
+        return result + "e";
+    }
+    else if (type == json::value_t::object) {
+        string result = "d";
+        for (auto it = value.begin(); it != value.end(); ++it) {
+            result += encode_bencode_value(it.key()) + encode_bencode_value(it.value());
+        }
+        return result + "e";
+    }
+
+    return "";
+}
+
+size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    std::string *response = reinterpret_cast<std::string*>(userdata);
+    response->append(ptr, size * nmemb);
+    return size * nmemb;
+}
+
+int main(int argc, char *argv[]) {
+  // Flush after every cout / cerr
+  cout << unitbuf;
+  cerr << unitbuf;
+
+  if (argc < 2) {
+    cerr << "Usage: " << argv[0] << " decode <encoded_value>" << endl;
+    return 1;
+  }
+
+  string command = argv[1];
+  size_t begin = 0;
+  if (command == "decode") {
+    if (argc < 3) {
+      cerr << "Usage: " << argv[0] << " decode <encoded_value>"
+                << endl;
+      return 1;
+    }
+    // You can use print statements as follows for debugging, they'll be visible
+    // when running tests.
+    cerr << "Logs from your program will appear here!" << endl;
+
+    // Uncomment this block to pass the first stage
+    string encoded_value = argv[2];
+    json array = json::array();
+    while (begin < encoded_value.size()) {
+      json decoded_value = decode_bencoded_value(encoded_value, begin);
+      array.push_back(decoded_value);
+    }
+    cout << array[0].dump() << endl;
+  } else if (command == "info") {
+    json object = decode_torrent_file(argv[2]);
+    string announce_url = object.at("announce").get<string>();
     int64_t length = object.at("info").at("length").get<int64_t>();
-    std::string info_value = encode_bencode_value(object.at("info"));
-    std::vector<uint8_t> bytes(info_value.begin(), info_value.end());
-    std::string info_hash = sha1(bytes);
-    std::cout << "Tracker URL: " << announce_url << "\n";
-    std::cout << "Length: " << length << "\n";
-    std::cout << "Info Hash: " << info_hash << "\n";
-    std::cout << "Piece Length: " <<  object.at("info").at("piece length") << "\n";
-    std::cout << "Piece Hashes:" << "\n";
-    std::string hashes  = object.at("info").at("pieces").get<std::string>();
-    std::vector<uint8_t> pieces(hashes.begin(), hashes.end());
+    string info_value = encode_bencode_value(object.at("info"));
+    vector<uint8_t> bytes(info_value.begin(), info_value.end());
+    string info_hash = sha1(bytes);
+    cout << "Tracker URL: " << announce_url << "\n";
+    cout << "Length: " << length << "\n";
+    cout << "Info Hash: " << info_hash << "\n";
+    cout << "Piece Length: " <<  object.at("info").at("piece length") << "\n";
+    cout << "Piece Hashes:" << "\n";
+    string hashes  = object.at("info").at("pieces").get<string>();
+    vector<uint8_t> pieces(hashes.begin(), hashes.end());
     for (size_t i = 0; i < pieces.size(); ++i) {
         if(i % 20 == 0 && i) {
-            std::cout << "\n";
+            cout << "\n";
         }
         printf("%02x", pieces[i]);
     }
-    std::cout << "\n";
+    cout << "\n";
+  } else if(command == "peers") {
+    json object = decode_torrent_file(argv[2]);
+    CURL *curl;
+    CURLcode result;
+    curl = curl_easy_init();
+    if(curl == NULL) {
+      cerr << "curl_easy_init() failed" << endl;
+      return -1;
+    }
+    string info_value = encode_bencode_value(object.at("info"));
+    vector<uint8_t> bytes(info_value.begin(), info_value.end());
+    string announce_url = object.at("announce").get<string>();
+    string peer_id = "abcdefghijklmnoptrst";
+    int64_t length = object.at("info").at("length").get<int64_t>();
+    ostringstream oss;
+    unsigned char hash[SHA_DIGEST_LENGTH]; // 20字节
+    SHA1(reinterpret_cast<const unsigned char*>(bytes.data()),
+         bytes.size(),
+         hash);
+    oss << announce_url
+        << "?info_hash=" << curl_easy_escape(curl, reinterpret_cast<char*>(hash), SHA_DIGEST_LENGTH)
+        << "&peer_id="   << curl_easy_escape(curl, peer_id.c_str(), peer_id.length())
+        << "&port="      << 6881
+        << "&uploaded=" << 0
+        << "&downloaded=" << 0
+        << "&left=" << length
+        << "&compact=" << 1;
+    string url = oss.str();
+    string response;
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    result = curl_easy_perform(curl);
+    if(result != CURLE_OK) {
+      cerr << "curl_easy_perform() failed" << endl;
+      return -1;
+    }
+    size_t begin = 0;
+    json content = decode_bencoded_value(response, begin);
+    string peers = content.at("peers").get<string>();
+    for(size_t i = 0; i < peers.size(); i+=6) {
+      unsigned char ip1 = static_cast<unsigned char>(peers[i]);
+      unsigned char ip2 = static_cast<unsigned char>(peers[i + 1]);
+      unsigned char ip3 = static_cast<unsigned char>(peers[i + 2]);
+      unsigned char ip4 = static_cast<unsigned char>(peers[i + 3]);
+
+      uint16_t port = (static_cast<unsigned char>(peers[i + 4]) << 8) |
+                      static_cast<unsigned char>(peers[i + 5]);
+
+      printf("%d.%d.%d.%d:%d\n", ip1, ip2, ip3, ip4, port);
+    }
+    curl_easy_cleanup(curl);
   } else {
-    std::cerr << "unknown command: " << command << std::endl;
+    cerr << "unknown command: " << command << endl;
     return 1;
   }
 

@@ -8,6 +8,10 @@ file(GLOB_RECURSE SOURCE_FILES src/*.cpp src/*.hpp)
 
 find_package(OpenSSL REQUIRED)
 
+find_package(CURL REQUIRED)
+
+include_directories(${CURL_INCLUDE_DIRS})
+
 add_executable(bittorrent ${SOURCE_FILES})
 
-target_link_libraries(bittorrent PRIVATE OpenSSL::Crypto)
+target_link_libraries(bittorrent PRIVATE OpenSSL::Crypto ${CURL_LIBRARIES})
