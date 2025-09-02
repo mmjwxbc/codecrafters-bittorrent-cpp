@@ -8,6 +8,8 @@
 #include "util.hpp"
 #include <curl/curl.h>
 #include <openssl/sha.h>
+#include <sys/socket.h>  // socket, connect
+#include <unistd.h> 
 using json = nlohmann::json;
 using namespace std;
 json decode_bencoded_value(const string &encoded_value, size_t &begin) {
@@ -212,6 +214,36 @@ int main(int argc, char *argv[]) {
       printf("%d.%d.%d.%d:%d\n", ip1, ip2, ip3, ip4, port);
     }
     curl_easy_cleanup(curl);
+  } else if(command == "handshake") {
+    json torrent = decode_torrent_file(argv[2]);
+    string arg(argv[3]);
+    size_t pos = arg.find(':');
+    string ip = arg.substr(0, pos);
+    string port = arg.substr(pos + 1);
+    string info_value = encode_bencode_value(torrent.at("info"));
+    vector<uint8_t> bytes(info_value.begin(), info_value.end());
+    unsigned char hash[SHA_DIGEST_LENGTH]; // 20字节
+    SHA1(reinterpret_cast<const unsigned char*>(bytes.data()),
+         bytes.size(),
+         hash);
+    int sockfd = connect(ip, port);
+    if(sockfd < 0) return -1;
+    char data[68] = {0};
+    data[0] = (char)19;
+    strncpy(data + 1, "BitTorrent protocol", 19);
+    strncpy(data + 28, (char *)hash, SHA_DIGEST_LENGTH);
+    strncpy(data + 48, "abcdefghijklmnoptrst", 20);
+    send(sockfd, data, 68, 0);
+    char buffer[1024] = {0};
+    ssize_t n = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+    close(sockfd);
+    cout << "size n = " << n << endl;
+    printf("Peer ID: ");
+    for(ssize_t i = 0; i < 20 && i + 48 < n; i++) {
+      printf("%02x", buffer[48]);
+    }
+    printf("\n");
+    
   } else {
     cerr << "unknown command: " << command << endl;
     return 1;
