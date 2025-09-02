@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
     cout << "size n = " << n << endl;
     printf("Peer ID: ");
     for(ssize_t i = 0; i < 20 && i + 48 < n; i++) {
-      printf("%02x", buffer[48]);
+      printf("%02x", buffer[48 + i]);
     }
     printf("\n");
     
