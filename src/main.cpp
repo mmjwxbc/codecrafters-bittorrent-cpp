@@ -128,12 +128,6 @@ int main(int argc, char *argv[]) {
     int sockfd = handle_handshake(ips[0], ports[0], info_value);
     int64_t piece_length = torrent.at("info").at("piece length").get<int64_t>();
     std::string pieces_str = torrent["info"]["pieces"].get<std::string>();
-    int piece_count = pieces_str.size() / 20;
-    if(piece_index >= piece_count) {
-      cerr << "Invalid piece index: " << piece_index << endl;
-      return -1;
-    }
-    cout << "piece count = " << piece_count << endl;
     int block_count = (piece_length + 16383) / 16384;
     vector<struct Piece> pieces;
     for(int i = 0; i < block_count; i++) {
