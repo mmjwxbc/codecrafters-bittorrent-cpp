@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     vector<struct Piece> pieces;
     for(int i = 0; i < block_count; i++) {
       int cur_length = (i == block_count - 1) ? piece_length - (i) * 16384 : 16384;
-      unsigned begin_index = piece_index * 16384;
+      unsigned begin_index = i * 16384;
       download_block(sockfd, piece_index, begin_index, cur_length);
       struct Piece piece = wait_block(sockfd, cur_length);
       pieces.emplace_back(std::move(piece));
