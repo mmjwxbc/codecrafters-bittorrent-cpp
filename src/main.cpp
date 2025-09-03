@@ -203,6 +203,9 @@ int main(int argc, char *argv[]) {
     e876f67a2a8886e8f36b136726c30fa29703022d
     f00d937a0213df1982bc8d097227ad9e909acc17
     */
+    for (auto it = metadata.begin(); it != metadata.end(); ++it) {
+        std::cout << it.key() << std::endl;
+    }
     cout << "Tracker URL: " << key_val["tr"] << "\n";
     cout << "Length: " << metadata.at("length") << "\n";
     cout << "Info Hash: " << key_val["xt"] << "\n";
