@@ -322,6 +322,9 @@ struct Piece wait_block(const int sockfd) {
     Piece piece;
     static std::vector<uint8_t> buf;
 
+    // 清空缓冲区，准备读取新的消息
+    buf.clear();
+
     while(buf.size() < 4) read_nbytes(sockfd, buf, 4);
 
     uint32_t prefix_len_network;
@@ -355,6 +358,9 @@ struct Piece wait_block(const int sockfd) {
     cout << "block_len = " << block_len << endl;
     piece.data.assign(reinterpret_cast<const char*>(buf.data()) + 13, block_len);
     cout << "piece data size = " << piece.data.size() << endl;
+    
+    // 清空缓冲区，为下次读取做准备
+    buf.clear();
     return piece;
 }
 
