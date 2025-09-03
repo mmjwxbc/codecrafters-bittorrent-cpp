@@ -316,7 +316,7 @@ string encode_bencode_value(const json& value) {
 //     return piece;
 // }
 
-struct Piece wait_block(const int sockfd, const unsigned /*unused_length*/) {
+struct Piece wait_block(const int sockfd) {
     Piece piece;
     std::vector<uint8_t> buf;
 
