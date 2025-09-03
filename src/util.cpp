@@ -261,7 +261,6 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     // Peer Metadata Extension ID: 123
     // cout << "after send extension = " << recv_buf.size() << endl;
     n = read_nbytes(sockfd, recv_buf, 5);
-    cout << "recv n = " << n << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
     prefix_len = ntohl(prefix_len);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
@@ -269,8 +268,6 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 1);
     size_t begin = 0;
     std::string s(recv_buf.begin(), recv_buf.end());
-    cout << prefix_len << endl;
-    cout << s << endl;
     json extension_object = decode_bencoded_value(s, begin);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
     cout << "Peer Metadata Extension ID: " << extension_object["m"]["ut_metadata"] << endl;
