@@ -120,7 +120,8 @@ int main(int argc, char *argv[]) {
     std::string pieces_str = torrent["info"]["pieces"].get<std::string>();
     int piece_count = pieces_str.size() / 20;
     if(piece_index >= piece_count) {
-      throw runtime_error("Invalid piece index: " + to_string(piece_index));
+      cerr << "Invalid piece index: " << piece_index << endl;
+      return -1;
     }
     cout << "piece count = " << piece_count << endl;
     int block_count = ceil(piece_length / 16384);

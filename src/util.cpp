@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <openssl/sha.h>
@@ -196,6 +197,7 @@ int download_block(const int sockfd, const unsigned piece_index, const unsigned 
 
     if(send(sockfd, send_data, 17, 0) != 17) {
         cerr << "fuck send download piece" << endl;
+        return -1;
     }
     return 0;
 }
@@ -326,16 +328,18 @@ struct Piece wait_block(const int sockfd, const unsigned /*unused_length*/) {
     read_nbytes(sockfd, buf, 4 + prefix_len);
 
     if (prefix_len < 1) {
-        throw std::runtime_error("invalid message length");
+      cerr << "invalid message length" << endl;
+      exit(-1);
     }
     uint8_t id = buf[4];
     if (id != 7) { // 只等待 piece 消息
         std::ostringstream oss;
         oss << "unexpected message id: " << int(id) << ", length=" << prefix_len;
-        throw std::runtime_error(oss.str());
+        exit(-1);
     }
     if (prefix_len < 9) {
-        throw std::runtime_error("piece message too short");
+      cerr << "piece message too short" << endl;
+      exit(-1);
     }
 
     memcpy(&piece.piece_index, buf.data() + 5, 4);
