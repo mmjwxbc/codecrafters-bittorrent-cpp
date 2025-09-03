@@ -348,6 +348,7 @@ struct Piece wait_block(const int sockfd, const unsigned /*unused_length*/) {
     piece.begin_index = ntohl(piece.begin_index);
 
     size_t block_len = prefix_len - 9;
+    cout << "block_len = " << block_len << endl;
     piece.data.assign(reinterpret_cast<const char*>(buf.data()) + 13, block_len);
 
     return piece;
