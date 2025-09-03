@@ -110,8 +110,18 @@ int main(int argc, char *argv[]) {
   } else if(command == "download_piece") {
     // ./your_program.sh download_piece -o /tmp/test-piece sample.torrent <piece_index>
     json torrent = decode_torrent_file(argv[4]);
-    unsigned piece_index = atoi(argv[5]);
+    string announce_url = torrent.at("announce").get<string>();
+    int64_t length = torrent.at("info").at("length").get<int64_t>();
     string info_value = encode_bencode_value(torrent.at("info"));
+    vector<uint8_t> bytes(info_value.begin(), info_value.end());
+    string info_hash = sha1(bytes);
+    cout << "Tracker URL: " << announce_url << "\n";
+    cout << "Length: " << length << "\n";
+    cout << "Info Hash: " << info_hash << "\n";
+    cout << "Piece Length: " <<  torrent.at("info").at("piece length") << "\n";
+    cout << "Piece Hashes:" << "\n";
+    unsigned piece_index = atoi(argv[5]);
+    // string info_value = encode_bencode_value(torrent.at("info"));
     vector<string> ips;
     vector<uint16_t> ports;
     handle_peers(torrent, ips, ports);
