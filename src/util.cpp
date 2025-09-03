@@ -325,11 +325,20 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id) {
     read_nbytes(sockfd, recv_buf, prefix_len - 1);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 1);
     size_t begin = 0;
-    string s(reinterpret_cast<const char*>(recv_buf.data()), recv_buf.size());
+    std::string s(recv_buf.begin(), recv_buf.end());
     cout << prefix_len << endl;
     cout << s.size() << endl;
 
-    json metadata_object = decode_bencoded_value(s, begin);
+    json metadata_object = json::object();
+    if (s[begin] == 'd') {
+      begin++;
+      while (s[begin] != 'e') {
+        json key = decode_bencoded_value(s, begin);
+        json value = decode_bencoded_value(s, begin);
+        object[key] = value;
+      }
+      begin++;
+    }
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
     return metadata_object;
 }
