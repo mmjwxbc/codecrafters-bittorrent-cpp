@@ -196,9 +196,10 @@ int download_block(const int sockfd, const unsigned piece_index, const unsigned 
     memcpy(send_data + 13, &length_n, 4);
 
     if(send(sockfd, send_data, 17, 0) != 17) {
-        cerr << "fuck send download piece" << endl;
+        cout << "fuck send download piece" << endl;
         return -1;
     }
+    cout << "download block piece index = " << piece_index << " begin index = " << begin_index << endl;
     return 0;
 }
 
