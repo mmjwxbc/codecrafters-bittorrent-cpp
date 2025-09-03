@@ -249,9 +249,10 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     // send extension handshake message
     send_data[4] = 20;
     json object;
-    object["m"]["ut_metadata"] = 1;
+    object["m"]["ut_metadata"] = 16;
     string object_str = encode_bencode_value(object);
     uint32_t msg_len = htonl(1 + object_str.size()); // length prefix = 1 (ID only)
+    memcpy(send_data, &msg_len, 4);
     send(sockfd, send_data, 4 + 1 + object_str.size(), 0);
 
     // send interest message
