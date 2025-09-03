@@ -329,17 +329,18 @@ struct Piece wait_block(const int sockfd) {
     read_nbytes(sockfd, buf, 4 + prefix_len);
 
     if (prefix_len < 1) {
-      cerr << "invalid message length" << endl;
+      cout << "invalid message length" << endl;
       exit(-1);
     }
     uint8_t id = buf[4];
     if (id != 7) { // 只等待 piece 消息
         std::ostringstream oss;
         oss << "unexpected message id: " << int(id) << ", length=" << prefix_len;
+        cout << oss.str() << endl;
         exit(-1);
     }
     if (prefix_len < 9) {
-      cerr << "piece message too short" << endl;
+      cout << "piece message too short" << endl;
       exit(-1);
     }
 
