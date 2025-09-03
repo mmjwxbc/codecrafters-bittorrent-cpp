@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
       unsigned begin_index = i * 16384;
       download_block(sockfd, piece_index, begin_index, cur_length);
       struct Piece piece = wait_block(sockfd, cur_length);
-      pieces.emplace_back(std::move(piece));
+      // pieces.emplace_back(std::move(piece));
     }
     
     return write_to_file(argv[3], pieces) && handle_wave(sockfd);
