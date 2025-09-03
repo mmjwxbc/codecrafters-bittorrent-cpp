@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
     string ip = arg.substr(0, pos);
     uint16_t port = atoi(arg.substr(pos + 1).c_str());
     string info_value = encode_bencode_value(torrent.at("info"));
-    int sockfd = handle_handshake(ip, port, info_value, false);
+    int sockfd = handle_handshake(ip, port, info_value);
     return handle_wave(sockfd);
   } else if(command == "download_piece") {
     // ./your_program.sh download_piece -o /tmp/test-piece sample.torrent <piece_index>
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     vector<string> ips;
     vector<uint16_t> ports;
     handle_peers(torrent, ips, ports);
-    int sockfd = handle_handshake(ips[0], ports[0], info_value, false);
+    int sockfd = handle_handshake(ips[0], ports[0], info_value);
     int64_t piece_length = torrent.at("info").at("piece length").get<int64_t>();
     std::string pieces_str = torrent["info"]["pieces"].get<std::string>();
     int piece_cnt = (length + piece_length) / piece_length;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     vector<string> ips;
     vector<uint16_t> ports;
     handle_peers(torrent, ips, ports);
-    int sockfd = handle_handshake(ips[0], ports[0], info_value, false);
+    int sockfd = handle_handshake(ips[0], ports[0], info_value);
     int64_t piece_length = torrent.at("info").at("piece length").get<int64_t>();
     std::string pieces_str = torrent["info"]["pieces"].get<std::string>();
     int piece_cnt = (length + piece_length) / piece_length;
@@ -175,12 +175,12 @@ int main(int argc, char *argv[]) {
     cout << "Tracker URL: " << key_val["tr"] << endl;
     cout << "Info Hash: " << key_val["xt"] << endl;
   } else if(command == "magnet_handshake") {
-    json torrent = decode_torrent_file(argv[4]);
-    string info_value = encode_bencode_value(torrent.at("info"));
+    string magnet_link = argv[2];
+    auto key_val = parse_magnet(magnet_link);
     vector<string> ips;
     vector<uint16_t> ports;
-    handle_peers(torrent, ips, ports);
-    int sockfd = handle_handshake(ips[0], ports[0], info_value, true);
+    handle_magnet_peers(key_val["tr"], key_val["xt"], ips, ports);
+    int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"]);
   } else {
     cerr << "unknown command: " << command << endl;
     return 1;

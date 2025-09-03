@@ -101,7 +101,7 @@ string sha1(const vector<uint8_t>& data) {
     return oss.str();
 }
 
-int handle_handshake(const string ip, const uint16_t port, const string info_value, const bool support_magnet) {
+int handle_handshake(const string ip, const uint16_t port, const string info_value) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket failed");
@@ -130,8 +130,82 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
     memset(send_data, 0, sizeof(send_data));
     send_data[0] = 19;
     memcpy(send_data + 1,  "BitTorrent protocol", 19);   // 协议名是 ASCII，可以 memcpy
-    send_data[25] = support_magnet ? 16 : 0;
     memcpy(send_data + 28, hash, SHA_DIGEST_LENGTH);     // 二进制：必须 memcpy
+    memcpy(send_data + 48, "abcdefghijklmnoptrst", 20);  // 即便是 ASCII，用 memcpy 更直观
+    send(sockfd, send_data, 68, 0);
+    vector<uint8_t> recv_buf;
+    ssize_t n = read_nbytes(sockfd, recv_buf, 68);
+    printf("Peer ID: ");
+    for(ssize_t i = 0; i < 20 && i + 48 < n; i++) {
+      printf("%02x", static_cast<unsigned char>(recv_buf[48 + i]));
+    }
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 68);
+    printf("\n");
+    // for(ssize_t i = 0; i < 20; i++) {
+    //   printf("%02x", static_cast<unsigned char>(hash[i]));
+    // }
+
+    // cout << "before recv bitfied = " << recv_buf.size() << endl;
+    // recv bitfield message
+    unsigned prefix_len = 0;
+    unsigned char id = 0;
+    n = read_nbytes(sockfd, recv_buf, 5);
+    // cout << "after recv bitfied = " << recv_buf.size() << endl;
+    memcpy(&prefix_len, recv_buf.data(), 4);
+    prefix_len = ntohl(prefix_len);
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
+    if(prefix_len > 1) {
+      read_nbytes(sockfd, recv_buf, prefix_len - 1);
+      recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 1);
+    }
+
+    // send interest message
+    uint32_t msg_len = htonl(1); // length prefix = 1 (ID only)
+    memcpy(send_data, &msg_len, 4);   // 前四字节 = length
+    send_data[4] = 2;                 // message ID = 2 (interest)
+    send(sockfd, send_data, 5, 0);
+
+    // cout << "before recv unchoke = " << recv_buf.size() << endl;
+    // recv unchoke message
+    n = read_nbytes(sockfd, recv_buf, 5);
+    // cout << "before after unchoke = " << recv_buf.size() << endl;
+    memcpy(&prefix_len, recv_buf.data(), 4);
+    prefix_len = ntohl(prefix_len);
+    // cout << "unchoke message length = " << prefix_len << endl;
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
+    if(prefix_len > 1) {
+      read_nbytes(sockfd, recv_buf, prefix_len - 1);
+    }
+    return sockfd;
+}
+
+
+int handle_magnet_handshake(const string ip, const uint16_t port, const string hash) {
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("socket failed");
+        return -1;
+    }
+
+    sockaddr_in server_addr{};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);  // 注意大端序转换
+    if (inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr) <= 0) {
+        perror("inet_pton failed");
+        return -1;
+    }
+
+    if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("connect failed");
+        return -1;
+    }
+    if(sockfd < 0) return -1;
+    char send_data[68] = {0};
+    memset(send_data, 0, sizeof(send_data));
+    send_data[0] = 19;
+    memcpy(send_data + 1,  "BitTorrent protocol", 19);   // 协议名是 ASCII，可以 memcpy
+    send_data[25] = 16;
+    memcpy(send_data + 28, hash.c_str(), SHA_DIGEST_LENGTH);     // 二进制：必须 memcpy
     memcpy(send_data + 48, "abcdefghijklmnoptrst", 20);  // 即便是 ASCII，用 memcpy 更直观
     send(sockfd, send_data, 68, 0);
     vector<uint8_t> recv_buf;
@@ -225,6 +299,58 @@ int handle_peers(const json &torrent, vector<string> &ips, vector<uint16_t> &por
          hash);
     oss << announce_url
         << "?info_hash=" << curl_easy_escape(curl, reinterpret_cast<char*>(hash), SHA_DIGEST_LENGTH)
+        << "&peer_id="   << curl_easy_escape(curl, peer_id.c_str(), peer_id.length())
+        << "&port="      << 6881
+        << "&uploaded=" << 0
+        << "&downloaded=" << 0
+        << "&left=" << length
+        << "&compact=" << 1;
+    string url = oss.str();
+    string response;
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    result = curl_easy_perform(curl);
+    if(result != CURLE_OK) {
+      cerr << "curl_easy_perform() failed" << endl;
+      return -1;
+    }
+    size_t begin = 0;
+    json content = decode_bencoded_value(response, begin);
+    string peers = content.at("peers").get<string>();
+    for(size_t i = 0; i < peers.size(); i+=6) {
+      unsigned char ip1 = static_cast<unsigned char>(peers[i]);
+      unsigned char ip2 = static_cast<unsigned char>(peers[i + 1]);
+      unsigned char ip3 = static_cast<unsigned char>(peers[i + 2]);
+      unsigned char ip4 = static_cast<unsigned char>(peers[i + 3]);
+
+      uint16_t port = (static_cast<unsigned char>(peers[i + 4]) << 8) |
+                      static_cast<unsigned char>(peers[i + 5]);
+      // htons(atoi(port.c_str()));
+      ports.emplace_back(port);
+      ostringstream oss;
+        oss << int(ip1) << "." << int(ip2) << "." << int(ip3) << "." << int(ip4);
+      ips.emplace_back(oss.str());
+
+      cout << oss.str() << ":" << port << endl;
+    }
+    curl_easy_cleanup(curl);
+    return 0;
+}
+
+int handle_magnet_peers(const string announce_url, const string hash, vector<string> &ips, vector<uint16_t> &ports) {
+    CURL *curl;
+    CURLcode result;
+    curl = curl_easy_init();
+    if(curl == NULL) {
+      cerr << "curl_easy_init() failed" << endl;
+      return -1;
+    }
+    string peer_id = "abcdefghijklmnoptrst";
+    int64_t length = 999;
+    ostringstream oss;
+    oss << announce_url
+        << "?info_hash=" << curl_easy_escape(curl, hash.c_str(), SHA_DIGEST_LENGTH)
         << "&peer_id="   << curl_easy_escape(curl, peer_id.c_str(), peer_id.length())
         << "&port="      << 6881
         << "&uploaded=" << 0
