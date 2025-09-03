@@ -20,6 +20,6 @@ int handle_wave(const int sockfd);
 int handle_peers(const json &torrent, std::vector<std::string> &ips, std::vector<uint16_t> &ports);
 json decode_bencoded_value(const std::string &encoded_value, size_t &begin);
 std::string encode_bencode_value(const json& value);
-struct Piece wait_block(const int sockfd, const unsigned length);
+struct Piece wait_block(const int sockfd);
 int write_to_file(char *filename, std::vector<struct Piece> &piece);
 #endif

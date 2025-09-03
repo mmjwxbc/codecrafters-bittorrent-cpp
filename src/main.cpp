@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       int cur_length = (i == block_count - 1) ? piece_length - (i) * 16384 : 16384;
       unsigned begin_index = i * 16384;
       download_block(sockfd, piece_index, begin_index, cur_length);
-      struct Piece piece = wait_block(sockfd, cur_length);
+      struct Piece piece = wait_block(sockfd);
       pieces.emplace_back(piece);
     }
     
