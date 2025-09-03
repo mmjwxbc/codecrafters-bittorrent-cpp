@@ -245,7 +245,7 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
       read_nbytes(sockfd, recv_buf, prefix_len - 1);
       recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 1);
     }
-
+    cout << "recv_buf size = " << recv_buf.size() << endl;
     // send extension handshake message
     send_data[4] = 20;
     send_data[5] = 0;
