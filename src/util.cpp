@@ -246,8 +246,16 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
       recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 1);
     }
 
+    // send extension handshake message
+    send_data[4] = 20;
+    json object;
+    object["m"]["ut_metadata"] = 1;
+    string object_str = encode_bencode_value(object);
+    uint32_t msg_len = htonl(1 + object_str.size()); // length prefix = 1 (ID only)
+    send(sockfd, send_data, 4 + 1 + object_str.size(), 0);
+
     // send interest message
-    uint32_t msg_len = htonl(1); // length prefix = 1 (ID only)
+    msg_len = htonl(1); // length prefix = 1 (ID only)
     memcpy(send_data, &msg_len, 4);   // 前四字节 = length
     send_data[4] = 2;                 // message ID = 2 (interest)
     send(sockfd, send_data, 5, 0);

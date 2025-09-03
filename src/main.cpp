@@ -170,13 +170,10 @@ int main(int argc, char *argv[]) {
   } else if(command == "magnet_parse") {
     string magnet_link = argv[2];
     auto key_val = parse_magnet(magnet_link);
-    // Tracker URL: http://bittorrent-test-tracker.codecrafters.io/announce
-    // Info Hash: d69f91e6b2ae4c542468d1073a71d4ea13879a7f
     cout << "Tracker URL: " << key_val["tr"] << endl;
     cout << "Info Hash: " << key_val["xt"] << endl;
   } else if(command == "magnet_handshake") {
     string magnet_link = argv[2];
-    // string magnet_link = "magnet:?xt=urn:btih:ad42ce8109f54c99613ce38f9b4d87e70f24a165&dn=magnet1.gif&tr=http%3A%2F%2F127.0.0.1:38481%2Fannounce";
     auto key_val = parse_magnet(magnet_link);
     vector<string> ips;
     vector<uint16_t> ports;
