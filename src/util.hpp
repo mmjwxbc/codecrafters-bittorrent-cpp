@@ -14,7 +14,7 @@ struct Piece {
 
 std::string sha1(const std::vector<uint8_t>& data);
 int connect(const std::string ip, const std::string port);
-int handle_handshake(const std::string ip, const uint16_t port, const std::string info);
+int handle_handshake(const std::string ip, const uint16_t port, const std::string info, const bool support_magnet);
 int download_block(const int sockfd, const unsigned piece_index, const unsigned begin_index, const unsigned length);
 int handle_wave(const int sockfd);
 int handle_peers(const json &torrent, std::vector<std::string> &ips, std::vector<uint16_t> &ports);

@@ -101,7 +101,7 @@ string sha1(const vector<uint8_t>& data) {
     return oss.str();
 }
 
-int handle_handshake(const string ip, const uint16_t port, const string info_value) {
+int handle_handshake(const string ip, const uint16_t port, const string info_value, const bool support_magnet) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket failed");
@@ -130,6 +130,7 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
     memset(send_data, 0, sizeof(send_data));
     send_data[0] = 19;
     memcpy(send_data + 1,  "BitTorrent protocol", 19);   // 协议名是 ASCII，可以 memcpy
+    send_data[25] = support_magnet ? 16 : 0;
     memcpy(send_data + 28, hash, SHA_DIGEST_LENGTH);     // 二进制：必须 memcpy
     memcpy(send_data + 48, "abcdefghijklmnoptrst", 20);  // 即便是 ASCII，用 memcpy 更直观
     send(sockfd, send_data, 68, 0);
@@ -141,16 +142,16 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
     }
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 68);
     printf("\n");
-    for(ssize_t i = 0; i < 20; i++) {
-      printf("%02x", static_cast<unsigned char>(hash[i]));
-    }
+    // for(ssize_t i = 0; i < 20; i++) {
+    //   printf("%02x", static_cast<unsigned char>(hash[i]));
+    // }
 
-    cout << "before recv bitfied = " << recv_buf.size() << endl;
+    // cout << "before recv bitfied = " << recv_buf.size() << endl;
     // recv bitfield message
     unsigned prefix_len = 0;
     unsigned char id = 0;
     n = read_nbytes(sockfd, recv_buf, 5);
-    cout << "after recv bitfied = " << recv_buf.size() << endl;
+    // cout << "after recv bitfied = " << recv_buf.size() << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
     prefix_len = ntohl(prefix_len);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
@@ -165,13 +166,13 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
     send_data[4] = 2;                 // message ID = 2 (interest)
     send(sockfd, send_data, 5, 0);
 
-    cout << "before recv unchoke = " << recv_buf.size() << endl;
+    // cout << "before recv unchoke = " << recv_buf.size() << endl;
     // recv unchoke message
     n = read_nbytes(sockfd, recv_buf, 5);
-    cout << "before after unchoke = " << recv_buf.size() << endl;
+    // cout << "before after unchoke = " << recv_buf.size() << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
     prefix_len = ntohl(prefix_len);
-    cout << "unchoke message length = " << prefix_len << endl;
+    // cout << "unchoke message length = " << prefix_len << endl;
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
     if(prefix_len > 1) {
       read_nbytes(sockfd, recv_buf, prefix_len - 1);
