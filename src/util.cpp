@@ -319,7 +319,7 @@ string encode_bencode_value(const json& value) {
 
 struct Piece wait_block(const int sockfd) {
     Piece piece;
-    std::vector<uint8_t> buf;
+    static std::vector<uint8_t> buf;
 
     read_nbytes(sockfd, buf, 4);
     uint32_t prefix_len_network;
