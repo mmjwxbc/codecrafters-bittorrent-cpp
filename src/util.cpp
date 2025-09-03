@@ -363,5 +363,6 @@ int write_to_file(char *filename, vector<struct Piece> &pieces) {
     for(const auto &piece : pieces) {
       file.write(piece.data.c_str(), piece.data.size());
     }
+    cout << "success to write file" << endl;
     return 0;
 }
