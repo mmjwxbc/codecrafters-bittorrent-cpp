@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 #include "util.hpp"
@@ -141,6 +140,32 @@ int main(int argc, char *argv[]) {
       pieces.emplace_back(piece);
     }
     
+    return write_to_file(argv[3], pieces) && handle_wave(sockfd);
+  } else if(command == "download") {
+    json torrent = decode_torrent_file(argv[4]);
+    string announce_url = torrent.at("announce").get<string>();
+    int64_t length = torrent.at("info").at("length").get<int64_t>();
+    string info_value = encode_bencode_value(torrent.at("info"));
+    vector<string> ips;
+    vector<uint16_t> ports;
+    handle_peers(torrent, ips, ports);
+    int sockfd = handle_handshake(ips[0], ports[0], info_value);
+    int64_t piece_length = torrent.at("info").at("piece length").get<int64_t>();
+    std::string pieces_str = torrent["info"]["pieces"].get<std::string>();
+    int piece_cnt = (length + piece_length) / piece_length;
+    vector<struct Piece> pieces;
+    for(int p = 0; p < piece_cnt; p++) {
+      int cur_piece_length = (p + 1 == piece_cnt) ? length - (p) * piece_length : piece_length;
+      int block_count = (cur_piece_length + 16383) / 16384;
+      // cout << "block_count = " << block_count << endl;
+      for(int b = 0; b < block_count; b++) {
+        int cur_length = (b == block_count - 1) ? cur_piece_length - (b) * 16384 : 16384;
+        unsigned begin_index = b * 16384;
+        download_block(sockfd, p, begin_index, cur_length);
+        struct Piece piece = wait_block(sockfd);
+        pieces.emplace_back(piece);
+      }
+    }
     return write_to_file(argv[3], pieces) && handle_wave(sockfd);
   } else {
     cerr << "unknown command: " << command << endl;
