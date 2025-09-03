@@ -257,6 +257,13 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     memcpy(send_data + 6, object_str.c_str(), object_str.size());
     send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0);
 
+    // recv send extension handshake message
+    // Peer Metadata Extension ID: 123
+    n = read_nbytes(sockfd, recv_buf, 5);
+    // cout << "after recv bitfied = " << recv_buf.size() << endl;
+    memcpy(&prefix_len, recv_buf.data(), 4);
+    prefix_len = ntohl(prefix_len);
+
     // send interest message
     msg_len = htonl(1); // length prefix = 1 (ID only)
     memcpy(send_data, &msg_len, 4);   // 前四字节 = length
