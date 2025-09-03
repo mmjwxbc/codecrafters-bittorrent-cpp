@@ -272,7 +272,7 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
     cout << "Peer Metadata Extension ID: " << extension_object["m"]["ut_metadata"] << endl;
 
-
+    metadata_id = extension_object["m"]["ut_metadata"].get<unsigned int>();
 
 
     // // send interest message
