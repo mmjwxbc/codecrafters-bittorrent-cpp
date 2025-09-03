@@ -268,7 +268,7 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     size_t begin = 0;
     std::string s(recv_buf.begin(), recv_buf.end());
     json extension_object = decode_bencoded_value(s, begin);
-    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 1);
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
     cout << "Peer Metadata Extension ID: " << extension_object["m"]["ut_metadata"] << endl;
 
     // send interest message
