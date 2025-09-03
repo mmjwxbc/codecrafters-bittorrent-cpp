@@ -67,8 +67,9 @@ json decode_bencoded_value(const string &encoded_value, size_t &begin) {
 }
 
 ssize_t read_nbytes(int sockfd, vector<uint8_t> &recv_buf, size_t len) {
+    static size_t cnt = 0;
     size_t total = recv_buf.size();
-    uint8_t tmp[1024];
+    uint8_t tmp[65534];
     while (total < len) {
         ssize_t n = recv(sockfd, tmp, len - total, 0);
         if (n < 0) {
@@ -77,9 +78,10 @@ ssize_t read_nbytes(int sockfd, vector<uint8_t> &recv_buf, size_t len) {
         } else if (n == 0) {
             break;
         }
-        total += n;
         recv_buf.insert(recv_buf.end(), tmp, tmp + n);
+        total += n;
     }
+    cnt += total;
     return total;
 }
 
@@ -123,6 +125,7 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
          hash);
     if(sockfd < 0) return -1;
     char send_data[68] = {0};
+    memset(send_data, 0, sizeof(send_data));
     send_data[0] = 19;
     memcpy(send_data + 1,  "BitTorrent protocol", 19);   // 协议名是 ASCII，可以 memcpy
     memcpy(send_data + 28, hash, SHA_DIGEST_LENGTH);     // 二进制：必须 memcpy
@@ -136,6 +139,9 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
     }
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 68);
     printf("\n");
+    for(ssize_t i = 0; i < 20; i++) {
+      printf("%02x", static_cast<unsigned char>(hash[i]));
+    }
 
     cout << "before recv bitfied = " << recv_buf.size() << endl;
     // recv bitfield message
@@ -145,9 +151,11 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
     cout << "after recv bitfied = " << recv_buf.size() << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
     prefix_len = ntohl(prefix_len);
-    recv_buf.clear();
-    read_nbytes(sockfd, recv_buf, prefix_len - 1);
-    recv_buf.clear();
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
+    if(prefix_len > 1) {
+      read_nbytes(sockfd, recv_buf, prefix_len - 1);
+      recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 1);
+    }
 
     // send interest message
     uint32_t msg_len = htonl(1); // length prefix = 1 (ID only)
@@ -157,13 +165,15 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
 
     cout << "before recv unchoke = " << recv_buf.size() << endl;
     // recv unchoke message
-    read_nbytes(sockfd, recv_buf, 5);
+    n = read_nbytes(sockfd, recv_buf, 5);
     cout << "before after unchoke = " << recv_buf.size() << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
     prefix_len = ntohl(prefix_len);
     cout << "unchoke message length = " << prefix_len << endl;
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
-    read_nbytes(sockfd, recv_buf, prefix_len - 1);
+    if(prefix_len > 1) {
+      read_nbytes(sockfd, recv_buf, prefix_len - 1);
+    }
     return sockfd;
 }
 
@@ -184,7 +194,9 @@ int download_piece(const int sockfd, const unsigned piece_index, const unsigned 
     memcpy(send_data + 9, &begin_index_n, 4);
     memcpy(send_data + 13, &length_n, 4);
 
-    send(sockfd, send_data, 17, 0);
+    if(send(sockfd, send_data, 17, 0) != 17) {
+        cerr << "fuck send download piece" << endl;
+    }
     return 0;
 }
 

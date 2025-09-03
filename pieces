@@ -1,0 +1,333 @@
+t.appendFooter();
+
+In general output arguments should be avoided. If your function must change the state of something, have it change the state of its owning object.
+
+#### Command Query Separation
+
+*Functions should either do something or answer something, but not both. Either your function should change the state of an object, or it should return some information about that object. Doing both often leads to confusion.*
+
+	public boolean set(String attribute, String value);
+
+This function sets the value of a named attribute and returns true if it is successful and false if no such attribute exists. This leads to odd statements like this:
+
+	if (set("username", "unclebob"))
+
+Imagine this from the point of view of the reader. What does it mean? Is it asking whether the “username” attribute was previously set to “unclebob”? Or is it asking whether the “username” attribute was successfully set to “unclebob”? It’s hard to infer the meaning from the call because it’s not clear whether the word “set” is a verb or an adjective.
+
+The author intended set to be a verb, but in the context of the if statement it feels like an adjective. So the statement reads as “If the username attribute was previously set to unclebob” and not “set the username attribute to unclebob and if that worked then. . . .” We could try to resolve this by renaming the set function to setAndCheckIfExists, but that doesn’t much help the readability of the if statement. The real solution is to separate the command from the query so that the ambiguity cannot occur.
+
+	if (attributeExists("username")) {
+		setAttribute("username", "unclebob");
+	}
+
+#### Prefer Exceptions to Returning Error Codes
+
+Returning error codes from command functions is a subtle violation of command query separation. It promotes commands being used as expressions in the predicates of if state- ments.
+
+	if (deletePage(page) == E_OK)
+
+On the other hand, if you use exceptions instead of returned error codes, then the error processing code can be separated from the happy path code and can be simplified:
+
+	try {
+		deletePage(page);
+		registry.deleteReference(page.name);
+		configKeys.deleteKey(page.name.makeKey());
+	}
+	catch (Exception e) {
+		logger.log(e.getMessage());
+	}
+
+#### Extract Try/Catch Blocks
+
+	public void delete(Page page) {
+		try {
+			deletePageAndAllReferences(page);
+		}
+		catch (Exception e) {
+			logError(e);
+		}
+	}
+
+	private void deletePageAndAllReferences(Page page) throws Exception {
+		deletePage(page);
+		registry.deleteReference(page.name);
+		configKeys.deleteKey(page.name.makeKey());
+	}
+
+	private void logError(Exception e) {
+		logger.log(e.getMessage());
+	}
+
+- `delete`: Error processing.
+- `deletePageAndAllReferences`: All about the processes of fully deleting a page.
+- `logError`: E di yun.
+
+Functions should do one thing. Error handing is one thing. *Thus, a function that handles errors should do nothing else.* This implies (as in the example above) that if the keyword try exists in a function, it should be the very first word in the function and that there should be nothing after the catch/finally blocks.
+
+#### The Error.java Dependency Magnet
+
+	public enum Error {
+		OK,
+		INVALID,
+		NO_SUCH,
+		LOCKED,
+		OUT_OF_RESOURCES,
+		WAITING_FOR_EVENT;
+	}
+
+Classes like this are a dependency magnet; many other classes must import and use them. Thus, when the Error enum changes, all those other classes need to be recompiled and redeployed.
+
+When you use exceptions rather than error codes, then new exceptions are derivatives of the exception class. They can be added without forcing any recompilation or redeployment.
+
+#### Don’t Repeat Yourself
+
+Duplication may be the root of all evil in software. Many principles and practices have been created for the purpose of controlling or eliminating it. 
+
+- Normalization serves to eliminate duplication in data. 
+- OOP serves to concentrate code into base classes that would otherwise be redundant.
+- Structured programming, Aspect Oriented Programming, Compo- nent Oriented Programming, are all, in part, strategies for eliminating duplication.
+
+It would appear that since the invention of the subroutine, innovations in software development have been an ongoing attempt to eliminate duplication from our source code.
+
+#### Structured Programming
+
+*Dijkstra said that every function, and every block within a function, should have one entry and one exit.* Following these rules means that there should only be one return statement in a function, no break or continue statements in a loop, and never, ever, any goto statements.
+
+While we are sympathetic to the goals and disciplines of structured programming, those rules serve little benefit when functions are very small. It is only in larger functions that such rules provide significant benefit.
+
+If you keep your functions small, then the occasional multiple return, break, or continue statement does no harm and can sometimes even be more expressive than the single-entry, single-exit rule. On the other hand, goto only makes sense in large functions, so it should be avoided.
+
+#### How Do You Write Functions Like This?
+
+When I write functions, they come out long and complicated. They have lots of indenting and nested loops. They have long argument lists. The names are arbitrary, and there is duplicated code. But I also have a suite of unit tests that cover every one of those clumsy lines of code.
+
+In the end, I wind up with functions that follow the rules I’ve laid down in this chapter. I don’t write them that way to start. I don’t think anyone could.
+
+#### Conclusion
+
+Every system is built from a domain-specific language designed by the programmers to describe that system. 
+
+Functions are the verbs of that language, and classes are the nouns. This is not some throwback to the hideous old notion that the nouns and verbs in a require- ments document are the first guess of the classes and functions of a system. Rather, this is a much older truth. The art of programming is, and has always been, the art of language design.
+
+*Master programmers think of systems as stories to be told rather than programs to be written.* They use the facilities of their chosen programming language to construct a much richer and more expressive language that can be used to tell that story. Part of that domain-specific language is the hierarchy of functions that describe all the actions that take place within that system. In an artful act of recursion those actions are written to use the very domain-specific language they define to tell their own small part of the story.
+
+Bever forget that your real goal is to tell the story of the system, and that the functions you write need to fit cleanly together into a clear and precise language to help you with that telling.
+
+## Comments
+
+*If our programming languages were expressive enough, or if we had the talent to subtly wield those languages to express our intent, we would not need comments very much—perhaps not at all.*
+
+The proper use of comments is to compensate for our failure to express ourself in code. Note that I used the word failure. I meant it. Comments are always failures. We must have them because we cannot always figure out how to express ourselves without them, but their use is not a cause for celebration.
+
+So when you find yourself in a position where you need to write a comment, think it through and see whether there isn’t some way to turn the tables and express yourself in code. Every time you express yourself in code, you should pat yourself on the back. Every time you write a comment, you should grimace and feel the failure of your ability of expression.
+
+Inaccurate comments are far worse than no comments at all. They delude and mislead. They set expectations that will never be fulfilled. They lay down old rules that need not, or should not, be followed any longer.
+
+Truth can only be found in one place: the code. Only the code can truly tell you what it does. It is the only source of truly accurate information. Therefore, though comments are sometimes necessary, we will expend significant energy to minimize them.
+
+Clear and expressive code with few comments is far superior to cluttered and complex code with lots of comments. Rather than spend your time writing the comments that explain the mess you’ve made, spend it cleaning that mess.
+
+	// Check to see if the employee is eligible for full benefits
+	if ((employee.flags & HOURLY_FLAG) && (employee.age > 65))
+
+or
+
+	if (employee.isEligibleForFullBenefits())
+
+It takes only a few seconds of thought to explain most of your intent in code. In many cases it’s simply a matter of creating a function that says the same thing as the comment you want to write.
+
+#### Good Comments
+
+- Legal Comments (Copyright)
+- Informative Comments
+
+		// Returns an instance of the Responder being tested.
+		protected abstract Responder responderInstance();
+
+	Better to just use a good function name here.
+
+		// format matched kk:mm:ss EEE, MMM dd, yyyy
+		Pattern timeMatcher = Pattern.compile(
+		"\\d*:\\d*:\\d* \\w*, \\w* \\d*, \\d*");
+
+	In this case the comment lets us know that the regular expression is intended to match a time and date that were formatted with the SimpleDateFormat.format function using the specified format string. Still, it might have been better, and clearer, if this code had been moved to a special class that converted the formats of dates and times. Then the comment would likely have been superfluous.
+
+- Explanation of Intent
+- Warning of Consequences: `# bla bla is not thread safe...`
+- TODO Comments
+
+#### Bad Comments
+
+- Mumbling: If you decide to write a comment, then spend the time necessary to make sure it is the best comment you can write.
+- Redundant Comments
+- Mandated Comments: It is just plain silly to have a rule that says that every function must have a javadoc, or every variable must have a comment. Comments like this just clutter up the code, propa- gate lies, and lend to general confusion and disorganization.
+- Journal Comments
+- Noise Comments: `Default constructor`, `The day of the month`,
+
+*Don’t use a comment when you can use a function or a variable.*
+
+- Closing Brace Comments: Clutter.
+- Commented-out code: We have source control to remember this shit.
+- HTML Comments: Suck ass.
+- Nonlocal Information: If you must write a comment, then make sure it describes the code it appears near. Don’t offer systemwide information in the context of a local comment.
+- Inobvious Connection: The connection between a comment and the code it describes should be obvious. If you are going to the trouble to write a comment, then at least you’d like the reader to be able to look at the comment and the code and understand what the comment is talking about.
+
+	/*
+	* start with an array that is big enough to hold all the pixels * (plus filter bytes), and an extra 200 bytes for header info */
+	this.pngBytes = new byte[((this.width + 1) * this.height * 3) + 200];
+
+What is a filter byte? Does it relate to the +1? Or to the *3? Both? Is a pixel a byte? Why 200? The purpose of a comment is to explain code that does not explain itself.
+
+Function Headers: Short functions don’t need much description. A well-chosen name for a small function that does one thing is usually better than a comment header.
+
+#### Ugly Code for a Prime Generator
+
+	/**
+	* This class Generates prime numbers up to a user specified
+	* maximum. The algorithm used is the Sieve of Eratosthenes.
+	* <p>
+	* Eratosthenes of Cyrene, b. c. 276 BC, Cyrene, Libya --
+	* d. c. 194, Alexandria. The first man to calculate the
+	* circumference of the Earth. Also known for working on
+	* calendars with leap years and ran the library at Alexandria.
+	* <p>
+	* The algorithm is quite simple. Given an array of integers
+	* starting at 2. Cross out all multiples of 2. Find the next
+	* uncrossed integer, and cross out all of its multiples.
+	* Repeat untilyou have passed the square root of the maximum
+	* value. *
+	* @author Alphonse
+	* @version 13 Feb 2002 atp */
+
+	import java.util.*;
+
+	public class GeneratePrimes {
+	/**
+	* @param maxValue is the generation limit. */
+
+	public static int[] generatePrimes(int maxValue) {
+		if (maxValue >= 2) // the only valid case {
+			// declarations
+			int s = maxValue + 1; // size of array boolean[] f = new boolean[s];
+			int i;
+
+			// initialize array to true. for (i = 0; i < s; i++)
+			f[i] = true;
+
+			// get rid of known non-primes
+			f[0] = f[1] = false;
+
+			// sieve
+			int j;
+			for (i = 2; i < Math.sqrt(s) + 1; i++) {
+				if (f[i]) // if i is uncrossed, cross its multiples.{
+					for (j = 2 * i; j < s; j += i)
+						f[j] = false; // multiple is not prime
+				}
+			}
+
+			// how many primes are there? int count = 0;
+			for (i = 0; i < s; i++) {
+				if (f[i])
+				count++; // bump count.
+			}
+
+			int[] primes = new int[count];
+
+			// move the primes into the result
+			for (i = 0, j = 0; i < s; i++){
+				if (f[i])
+					primes[j++] = i;
+			}
+
+			// if prime
+			return primes; // return the primes
+			}
+			else // maxValue < 2
+			return new int[0]; // return null array if bad input.
+		}
+	}
+
+#### Refactored Version
+
+	/**
+	 * This class Generates prime numbers up to a user specified
+	 * maximum. The algorithm used is the Sieve of Eratosthenes.
+	 * Given an array of integers starting at 2:
+	 * Find the first uncrossed integer, and cross out all its
+	 * multiples. Repeat until there are no more multiples
+	 * in the array.
+	 */
+
+ 	public class PrimeGenerator {
+		private static boolean[] crossedOut;
+		private static int[] result;
+
+		public static int[] generatePrimes(int maxValue) {
+			if (maxValue < 2)
+				return new int[0];
+			else {
+				uncrossIntegersUpTo(maxValue);
+				crossOutMultiples();
+				putUncrossedIntegersIntoResult();
+				return result;
+			}
+	 	}
+
+	 	private static void uncrossIntegersUpTo(int maxValue) {
+			crossedOut = new boolean[maxValue + 1];
+			for (int i = 2; i < crossedOut.length; i++)
+				crossedOut[i] = false;
+		}
+
+		private static void crossOutMultiples() {
+			int limit = determineIterationLimit();
+			for (int i = 2; i <= limit; i++)
+				if (notCrossed(i))
+					crossOutMultiplesOf(i);
+		}
+
+		private static int determineIterationLimit() {
+			// Every multiple in the array has a prime factor that
+			// is less than or equal to the root of the array size,
+			// so we don't have to cross out multiples of numbers
+			// larger than that root.
+			double iterationLimit = Math.sqrt(crossedOut.length);
+			return (int) iterationLimit;
+		}
+
+		private static void crossOutMultiplesOf(int i) {
+			for (int multiple = 2*i; multiple < crossedOut.length; multiple += i)
+				crossedOut[multiple] = true;
+		}
+
+		private static boolean notCrossed(int i) {
+			return crossedOut[i] == false;
+		}
+
+		private static void putUncrossedIntegersIntoResult() {
+			result = new int[numberOfUncrossedIntegers()];
+				for (int j = 0, i = 2; i < crossedOut.length; i++)
+					if (notCrossed(i))
+						result[j++] = i;
+		}
+
+		private static int numberOfUncrossedIntegers() {
+			int count = 0;
+			for (int i = 2; i < crossedOut.length; i++)
+				if (notCrossed(i))
+					count++;
+
+			return count;
+		}
+	}
+
+## Formatting
+
+First of all, let’s be clear. Code formatting is important. It is too important to ignore and it is too important to treat religiously. Code formatting is about communication, and communication is the professional developer’s first order of business.
+
+Perhaps you thought that “getting it working” was the first order of business for a professional developer. I hope by now, however, that this book has disabused you of that idea. The functionality that you create today has a good chance of changing in the next release, but the readability of your code will have a profound effect on all the changes that will ever be made. The coding style and readability set precedents that continue to affect maintainability and extensibility long after the original code has been changed beyond recognition. Your style and discipline survives, even though your code does not.
+
+#### Vertical Formatting
+
+How big are most Java source files? It turns out that there is a huge range of sizes and some remarkable differences in style. So the average file size in the FitNesse project is about 65 lines, and about one-third of the files are between 40 and 100+ lines. The largest file in FitNesse is about 400 lines

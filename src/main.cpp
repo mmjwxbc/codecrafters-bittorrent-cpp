@@ -114,10 +114,12 @@ int main(int argc, char *argv[]) {
     vector<uint16_t> ports;
     handle_peers(torrent, ips, ports);
     int sockfd = handle_handshake(ips[0], ports[0], info_value);
-    unsigned length = torrent.at("info").at("piece length");
-    unsigned begin_index = piece_index * length;
-    download_piece(sockfd, piece_index, begin_index, length);
-    struct Piece piece = wait_piece(sockfd, length);
+    int64_t piece_length = torrent.at("info").at("piece length").get<int64_t>();
+    int num_piece = piece_length / 16384;
+    int cur_length = (num_piece == piece_index + 1) ? piece_length - (piece_index) * 16384 : 16384;
+    unsigned begin_index = piece_index * 16384;
+    download_piece(sockfd, piece_index, begin_index, cur_length);
+    struct Piece piece = wait_piece(sockfd, cur_length);
     return write_to_file(argv[3], piece) && handle_wave(sockfd);
   } else {
     cerr << "unknown command: " << command << endl;
