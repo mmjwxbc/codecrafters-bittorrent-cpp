@@ -295,14 +295,14 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     return sockfd;
 }
 
-json handle_magnet_info(const int sockfd, unsigned char metadata_id) {
+json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned int piece) {
     // send Request metadata
     unsigned char send_data[1024];
     send_data[4] = 20;
     send_data[5] = metadata_id;
     json object;
     object["msg_type"] = 0;
-    object["piece"] = 0;
+    object["piece"] = piece;
     string object_str = encode_bencode_value(object);
     unsigned int msg_len = htonl(2 + object_str.size()); // length prefix = 1 (ID only)
     memcpy(send_data, &msg_len, 4);
@@ -314,6 +314,7 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id) {
     vector<uint8_t> recv_buf;
     ssize_t n ;
     unsigned int prefix_len;
+    cout << "before recv metadata recv n = " << n << endl;
     n = read_nbytes(sockfd, recv_buf, 5);
     cout << "recv n = " << n << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
