@@ -24,6 +24,6 @@ struct Piece wait_block(const int sockfd);
 int write_to_file(char *filename, std::vector<struct Piece> &piece);
 std::map<std::string, std::string> parse_magnet(const std::string& magnet);
 int handle_magnet_peers(const std::string announce_url, const std::string hash, std::vector<std::string> &ips, std::vector<uint16_t> &ports);
-int handle_magnet_handshake(const std::string ip, const uint16_t port, const std::string hash, unsigned char &metadata_id);
-json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned int piece);
+int handle_magnet_handshake(const std::string ip, const uint16_t port, const std::string hash, uint8_t &metadata_id);
+json handle_magnet_info(const int sockfd, uint8_t metadata_id, unsigned int piece);
 #endif

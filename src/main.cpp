@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
     vector<string> ips;
     vector<uint16_t> ports;
     handle_magnet_peers(key_val["tr"], key_val["xt"], ips, ports);
-    unsigned char metadata_id = 0;
+    uint8_t metadata_id = 0;
     int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
     unsigned piece_index = atoi(argv[5]);
     cout << "Fuck" << endl;

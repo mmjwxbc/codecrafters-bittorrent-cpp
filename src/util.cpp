@@ -192,7 +192,7 @@ std::vector<uint8_t> hex_to_bytes(const std::string& hex) {
 }
 
 
-int handle_magnet_handshake(const string ip, const uint16_t port, const string hash, unsigned char &metadata_id) {
+int handle_magnet_handshake(const string ip, const uint16_t port, const string hash, uint8_t &metadata_id) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket failed");
