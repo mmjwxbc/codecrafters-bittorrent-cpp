@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include "util.hpp"
@@ -11,6 +12,7 @@
 #include <openssl/sha.h>
 #include <sys/socket.h>  // socket, connect
 #include <unistd.h> 
+#include <cmath>
 using json = nlohmann::json;
 using namespace std;
 
@@ -115,12 +117,22 @@ int main(int argc, char *argv[]) {
     handle_peers(torrent, ips, ports);
     int sockfd = handle_handshake(ips[0], ports[0], info_value);
     int64_t piece_length = torrent.at("info").at("piece length").get<int64_t>();
-    int num_piece = piece_length / 16384;
-    int cur_length = (num_piece == piece_index + 1) ? piece_length - (piece_index) * 16384 : 16384;
-    unsigned begin_index = piece_index * 16384;
-    download_piece(sockfd, piece_index, begin_index, cur_length);
-    struct Piece piece = wait_piece(sockfd, cur_length);
-    return write_to_file(argv[3], piece) && handle_wave(sockfd);
+    std::string pieces_str = torrent["info"]["pieces"].get<std::string>();
+    int piece_count = pieces_str.size() / 20;
+    if(piece_index >= piece_count) {
+      throw runtime_error("Invalid piece index: " + to_string(piece_index));
+    }
+    int block_count = ceil(piece_length / 16384);
+    vector<struct Piece> pieces;
+    for(int i = 0; i < block_count; i++) {
+      int cur_length = (i == block_count - 1) ? piece_length - (i) * 16384 : 16384;
+      unsigned begin_index = piece_index * 16384;
+      download_block(sockfd, piece_index, begin_index, cur_length);
+      struct Piece piece = wait_block(sockfd, cur_length);
+      pieces.emplace_back(std::move(piece));
+    }
+    
+    return write_to_file(argv[3], pieces) && handle_wave(sockfd);
   } else {
     cerr << "unknown command: " << command << endl;
     return 1;

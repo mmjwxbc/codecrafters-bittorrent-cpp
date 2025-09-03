@@ -182,7 +182,7 @@ int handle_wave(const int sockfd) {
     return close(sockfd);
 }
 
-int download_piece(const int sockfd, const unsigned piece_index, const unsigned begin_index, const unsigned length){
+int download_block(const int sockfd, const unsigned piece_index, const unsigned begin_index, const unsigned length){
     uint8_t send_data[1024];
     uint32_t msg_len = htonl(13);
     uint32_t piece_index_n = htonl(piece_index);
@@ -314,7 +314,7 @@ string encode_bencode_value(const json& value) {
 //     return piece;
 // }
 
-struct Piece wait_piece(const int sockfd, const unsigned /*unused_length*/) {
+struct Piece wait_block(const int sockfd, const unsigned /*unused_length*/) {
     Piece piece;
     std::vector<uint8_t> buf;
 
@@ -350,12 +350,14 @@ struct Piece wait_piece(const int sockfd, const unsigned /*unused_length*/) {
 }
 
 
-int write_to_file(char *filename, struct Piece &piece) {
+int write_to_file(char *filename, vector<struct Piece> &pieces) {
     ofstream file(filename, ios::binary);
     if (!file) {
       cerr << "Failed to open file\n";
       return 1;
     }
-    file.write(piece.data.c_str(), piece.data.size());
+    for(const auto &piece : pieces) {
+      file.write(piece.data.c_str(), piece.data.size());
+    }
     return 0;
 }
