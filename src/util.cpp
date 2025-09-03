@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <openssl/sha.h>
@@ -310,6 +311,26 @@ int handle_magnet_info(const int sockfd, unsigned char metadata_id) {
     memcpy(send_data, &msg_len, 4);
     memcpy(send_data + 6, object_str.c_str(), object_str.size());
     send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0);
+
+
+    // recv metadata
+    vector<uint8_t> recv_buf;
+    ssize_t n ;
+    unsigned int prefix_len;
+    n = read_nbytes(sockfd, recv_buf, 5);
+    cout << "recv n = " << n << endl;
+    memcpy(&prefix_len, recv_buf.data(), 4);
+    prefix_len = ntohl(prefix_len);
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
+    read_nbytes(sockfd, recv_buf, prefix_len - 1);
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 1);
+    size_t begin = 0;
+    std::string s(recv_buf.begin(), recv_buf.end());
+    cout << prefix_len << endl;
+    cout << s << endl;
+    json metadata_object = decode_bencoded_value(s, begin);
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
+    cout << metadata_object.dump() << endl;
     return 0;
 }
 
