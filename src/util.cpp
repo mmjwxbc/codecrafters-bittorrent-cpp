@@ -200,7 +200,7 @@ int download_block(const int sockfd, const unsigned piece_index, const unsigned 
         cout << "fuck send download piece" << endl;
         return -1;
     }
-    cout << "download block piece index = " << piece_index << " begin index = " << begin_index << endl;
+    // cout << "download block piece index = " << piece_index << " begin index = " << begin_index << endl;
     return 0;
 }
 
@@ -355,9 +355,9 @@ struct Piece wait_block(const int sockfd) {
     piece.begin_index = ntohl(piece.begin_index);
 
     size_t block_len = prefix_len - 9;
-    cout << "block_len = " << block_len << endl;
+    // cout << "block_len = " << block_len << endl;
     piece.data.assign(reinterpret_cast<const char*>(buf.data()) + 13, block_len);
-    cout << "piece data size = " << piece.data.size() << endl;
+    // cout << "piece data size = " << piece.data.size() << endl;
     
     // 清空缓冲区，为下次读取做准备
     buf.clear();

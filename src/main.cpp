@@ -115,11 +115,11 @@ int main(int argc, char *argv[]) {
     string info_value = encode_bencode_value(torrent.at("info"));
     vector<uint8_t> bytes(info_value.begin(), info_value.end());
     string info_hash = sha1(bytes);
-    cout << "Tracker URL: " << announce_url << "\n";
-    cout << "Length: " << length << "\n";
-    cout << "Info Hash: " << info_hash << "\n";
-    cout << "Piece Length: " <<  torrent.at("info").at("piece length") << "\n";
-    cout << "Piece Hashes:" << "\n";
+    // cout << "Tracker URL: " << announce_url << "\n";
+    // cout << "Length: " << length << "\n";
+    // cout << "Info Hash: " << info_hash << "\n";
+    // cout << "Piece Length: " <<  torrent.at("info").at("piece length") << "\n";
+    // cout << "Piece Hashes:" << "\n";
     unsigned piece_index = atoi(argv[5]);
     // string info_value = encode_bencode_value(torrent.at("info"));
     vector<string> ips;
@@ -131,12 +131,12 @@ int main(int argc, char *argv[]) {
     int piece_cnt = (length + piece_length) / piece_length;
     int cur_piece_length = (piece_index + 1 == piece_cnt) ? length - (piece_index) * piece_length : piece_length;
     int block_count = (cur_piece_length + 16383) / 16384;
-    cout << "block_count = " << block_count << endl;
+    // cout << "block_count = " << block_count << endl;
     vector<struct Piece> pieces;
     for(int i = 0; i < block_count; i++) {
       int cur_length = (i == block_count - 1) ? cur_piece_length - (i) * 16384 : 16384;
       unsigned begin_index = i * 16384;
-      download_block(sockfd, piece_index, begin_index, 16384);
+      download_block(sockfd, piece_index, begin_index, cur_length);
       struct Piece piece = wait_block(sockfd);
       pieces.emplace_back(piece);
     }
