@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     vector<string> ips;
     vector<uint16_t> ports;
     handle_magnet_peers(key_val["tr"], key_val["xt"], ips, ports);
-    unsigned char metadata_id = 0;
+    int metadata_id = 0;
     int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
   } else if(command == "magnet_info") {
     string magnet_link = argv[2];
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
     vector<string> ips;
     vector<uint16_t> ports;
     handle_magnet_peers(key_val["tr"], key_val["xt"], ips, ports);
-    unsigned char metadata_id = 0;
+    int metadata_id = 0;
     int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
     json metadata =  handle_magnet_info(sockfd, metadata_id, 0);
     /*
