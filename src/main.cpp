@@ -128,13 +128,15 @@ int main(int argc, char *argv[]) {
     int sockfd = handle_handshake(ips[0], ports[0], info_value);
     int64_t piece_length = torrent.at("info").at("piece length").get<int64_t>();
     std::string pieces_str = torrent["info"]["pieces"].get<std::string>();
-    int block_count = (piece_length + 16383) / 16384;
+    int piece_cnt = (torrent["info"]["length"].get<std::int64_t>() + piece_length) / piece_length;
+    int cur_piece_length = (piece_index + 1 == piece_cnt) ? torrent["info"]["length"].get<std::int64_t>() - (piece_index) * piece_length : piece_length;
+    int block_count = (cur_piece_length + 16383) / 16384;
     cout << "block_count = " << block_count << endl;
     vector<struct Piece> pieces;
     for(int i = 0; i < block_count; i++) {
-      int cur_length = (i == block_count - 1) ? piece_length - (i) * 16384 : 16384;
+      int cur_length = (i == block_count - 1) ? cur_piece_length - (i) * 16384 : 16384;
       unsigned begin_index = i * 16384;
-      download_block(sockfd, piece_index, begin_index, 16384);
+      download_block(sockfd, piece_index, begin_index, cur_length);
       struct Piece piece = wait_block(sockfd);
       pieces.emplace_back(piece);
     }
