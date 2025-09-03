@@ -325,7 +325,7 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id) {
     read_nbytes(sockfd, recv_buf, prefix_len - 1);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 1);
     size_t begin = 0;
-    std::string s(recv_buf.begin(), recv_buf.end());
+    string s(reinterpret_cast<const char*>(recv_buf.data()), recv_buf.size());
     cout << prefix_len << endl;
     cout << s.size() << endl;
 
