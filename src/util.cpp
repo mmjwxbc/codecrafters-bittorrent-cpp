@@ -191,7 +191,7 @@ std::vector<uint8_t> hex_to_bytes(const std::string& hex) {
 }
 
 
-int handle_magnet_handshake(const string ip, const uint16_t port, const string hash) {
+int handle_magnet_handshake(const string ip, const uint16_t port, const string hash, unsigned char &metadata_id) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket failed");
@@ -274,19 +274,9 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
     cout << "Peer Metadata Extension ID: " << extension_object["m"]["ut_metadata"] << endl;
 
-    // send Request metadata
-    send_data[4] = 20;
-    send_data[5] = extension_object["m"]["ut_metadata"].get<unsigned char>();
-    object = {};
-    object["m"]["msg_type"] = 0;
-    object["m"]["piece"] = 0;
-    object_str = encode_bencode_value(object);
-    msg_len = htonl(2 + object_str.size()); // length prefix = 1 (ID only)
-    memcpy(send_data, &msg_len, 4);
-    memcpy(send_data + 6, object_str.c_str(), object_str.size());
-    send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0);
 
-    
+
+
     // // send interest message
     // msg_len = htonl(1); // length prefix = 1 (ID only)
     // memcpy(send_data, &msg_len, 4);   // 前四字节 = length
@@ -307,6 +297,20 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     return sockfd;
 }
 
+int handle_magnet_info(const int sockfd, unsigned char metadata_id) {
+    // send Request metadata
+    unsigned char send_data[1024];
+    send_data[4] = 20;
+    send_data[5] = metadata_id;
+    json object;
+    object["m"]["msg_type"] = 0;
+    object["m"]["piece"] = 0;
+    string object_str = encode_bencode_value(object);
+    unsigned int msg_len = htonl(2 + object_str.size()); // length prefix = 1 (ID only)
+    memcpy(send_data, &msg_len, 4);
+    memcpy(send_data + 6, object_str.c_str(), object_str.size());
+    send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0);
+}
 
 int handle_wave(const int sockfd) {
     return close(sockfd);
