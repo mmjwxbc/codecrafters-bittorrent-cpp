@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
     //   pieces.emplace_back(piece);
     // }
     
-    return write_to_file(argv[3], pieces) && handle_wave(sockfd);
+    // return write_to_file(argv[3], pieces) && handle_wave(sockfd);
   } else if(command == "magnet_download") {
     string magnet_link = argv[4];
     auto key_val = parse_magnet(magnet_link);
