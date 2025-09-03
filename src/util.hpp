@@ -22,4 +22,5 @@ json decode_bencoded_value(const std::string &encoded_value, size_t &begin);
 std::string encode_bencode_value(const json& value);
 struct Piece wait_block(const int sockfd);
 int write_to_file(char *filename, std::vector<struct Piece> &piece);
+std::map<std::string, std::string> parse_magnet(const std::string& magnet);
 #endif

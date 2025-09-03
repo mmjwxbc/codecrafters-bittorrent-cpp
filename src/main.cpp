@@ -167,6 +167,13 @@ int main(int argc, char *argv[]) {
       }
     }
     return write_to_file(argv[3], pieces) && handle_wave(sockfd);
+  } else if(command == "magnet_parse") {
+    string magnet_link = argv[2];
+    auto key_val = parse_magnet(magnet_link);
+    // Tracker URL: http://bittorrent-test-tracker.codecrafters.io/announce
+    // Info Hash: d69f91e6b2ae4c542468d1073a71d4ea13879a7f
+    cout << "Tracker URL: " << key_val["tr"] << endl;
+    cout << "Info Hash: " << key_val["xt"] << endl;
   } else {
     cerr << "unknown command: " << command << endl;
     return 1;

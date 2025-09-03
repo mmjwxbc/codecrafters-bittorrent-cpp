@@ -380,3 +380,31 @@ int write_to_file(char *filename, vector<struct Piece> &pieces) {
     cout << "success to write file size = " << cnt << endl;
     return 0;
 }
+
+std::map<std::string, std::string> parse_magnet(const std::string& magnet) {
+    std::map<std::string, std::string> params;
+    size_t pos = magnet.find('?');
+    if (pos == std::string::npos) return params;
+
+    std::string query = magnet.substr(pos + 1);
+    std::istringstream iss(query);
+    std::string kv;
+    while (std::getline(iss, kv, '&')) {
+        size_t eq = kv.find('=');
+        if (eq != std::string::npos) {
+            std::string key = kv.substr(0, eq);
+            std::string val = kv.substr(eq + 1);
+            // URL decode
+            if(key == "tr") {
+              char *decoded = curl_easy_unescape(nullptr, val.c_str(), val.size(), nullptr);
+              params[key] = decoded ? decoded : val;
+              if (decoded) curl_free(decoded);
+            } else if(key == "xt") {
+              params[key] = val.substr(9);
+            } else {
+              params[key] = val;
+            }
+        }
+    }
+    return params;
+}
