@@ -192,7 +192,7 @@ std::vector<uint8_t> hex_to_bytes(const std::string& hex) {
 }
 
 
-int handle_magnet_handshake(const string ip, const uint16_t port, const string hash, uint8_t &metadata_id) {
+int handle_magnet_handshake(const string ip, const uint16_t port, const string hash, int &metadata_id) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket failed");
@@ -272,10 +272,7 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
     cout << "Peer Metadata Extension ID: " << extension_object["m"]["ut_metadata"] << endl;
 
-    int tmp = extension_object["m"]["ut_metadata"].get<int>();
-    cout << "tmp = " << tmp << endl;
-    metadata_id = uint8_t(tmp);
-    cout << "handle_magnet_handshake metadata_id = " << metadata_id << endl;
+    metadata_id = extension_object["m"]["ut_metadata"].get<int>();
 
     // // send interest message
     // msg_len = htonl(1); // length prefix = 1 (ID only)
