@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
       return -1;
     }
     cout << "piece count = " << piece_count << endl;
-    int block_count = ceil(piece_length / 16384);
+    int block_count = (piece_length + 16383) / 16384;
     vector<struct Piece> pieces;
     for(int i = 0; i < block_count; i++) {
       int cur_length = (i == block_count - 1) ? piece_length - (i) * 16384 : 16384;
