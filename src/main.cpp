@@ -129,6 +129,7 @@ int main(int argc, char *argv[]) {
     int64_t piece_length = torrent.at("info").at("piece length").get<int64_t>();
     std::string pieces_str = torrent["info"]["pieces"].get<std::string>();
     int block_count = (piece_length + 16383) / 16384;
+    cout << "block_count" << block_count << endl;
     vector<struct Piece> pieces;
     for(int i = 0; i < block_count; i++) {
       int cur_length = (i == block_count - 1) ? piece_length - (i) * 16384 : 16384;
