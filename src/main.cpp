@@ -96,7 +96,11 @@ int main(int argc, char *argv[]) {
     json torrent = decode_torrent_file(argv[2]);
     vector<string> ips;
     vector<uint16_t> ports;
-    return handle_peers(torrent, ips, ports);
+    handle_peers(torrent, ips, ports);
+    for(int i = 0; i < ips.size(); i++) {
+      cout << ips[i] << ":" << ports[i] << endl;
+    }
+    return 0;
   } else if(command == "handshake") {
     json torrent = decode_torrent_file(argv[2]);
     string arg(argv[3]);
@@ -163,7 +167,7 @@ int main(int argc, char *argv[]) {
         unsigned begin_index = b * 16384;
         download_block(sockfd, p, begin_index, cur_length);
         struct Piece piece = wait_block(sockfd);
-        pieces.emplace_back(piece);
+        pieces.emplace_back(std::move(piece));
       }
     }
     return write_to_file(argv[3], pieces) && handle_wave(sockfd);

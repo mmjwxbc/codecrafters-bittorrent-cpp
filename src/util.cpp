@@ -258,12 +258,13 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
 
     // recv extension handshake message
     // Peer Metadata Extension ID: 123
+    cout << "after send extension = " << recv_buf.size() << endl;
     n = read_nbytes(sockfd, recv_buf, 5);
-    // cout << "after recv bitfied = " << recv_buf.size() << endl;
+    cout << "recv n = " << n << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
     prefix_len = ntohl(prefix_len);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
-    read_nbytes(sockfd, recv_buf, prefix_len);
+    read_nbytes(sockfd, recv_buf, prefix_len - 1);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 1);
     size_t begin = 0;
     std::string s(recv_buf.begin(), recv_buf.end());
@@ -371,8 +372,6 @@ int handle_peers(const json &torrent, vector<string> &ips, vector<uint16_t> &por
       ostringstream oss;
         oss << int(ip1) << "." << int(ip2) << "." << int(ip3) << "." << int(ip4);
       ips.emplace_back(oss.str());
-
-      cout << oss.str() << ":" << port << endl;
     }
     curl_easy_cleanup(curl);
     return 0;
