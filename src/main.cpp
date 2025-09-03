@@ -192,7 +192,31 @@ int main(int argc, char *argv[]) {
     handle_magnet_peers(key_val["tr"], key_val["xt"], ips, ports);
     unsigned char metadata_id = 0;
     int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
-    return handle_magnet_info(sockfd, metadata_id);
+    json metadata =  handle_magnet_info(sockfd, metadata_id);
+    /*
+    Tracker URL: http://bittorrent-test-tracker.codecrafters.io/announce
+    Length: 92063
+    Info Hash: d69f91e6b2ae4c542468d1073a71d4ea13879a7f
+    Piece Length: 32768
+    Piece Hashes:
+    6e2275e604a0766656736e81ff10b55204ad8d35
+    e876f67a2a8886e8f36b136726c30fa29703022d
+    f00d937a0213df1982bc8d097227ad9e909acc17
+    */
+    cout << "Tracker URL: " << key_val["tr"] << "\n";
+    cout << "Length: " << metadata.at("length") << "\n";
+    cout << "Info Hash: " << key_val["xt"] << "\n";
+    cout << "Piece Length: " <<  metadata.at("piece length") << "\n";
+    cout << "Piece Hashes:" << "\n";
+    string hashes  = metadata.at("pieces").get<string>();
+    vector<uint8_t> pieces(hashes.begin(), hashes.end());
+    for (size_t i = 0; i < pieces.size(); ++i) {
+        if(i % 20 == 0 && i) {
+            cout << "\n";
+        }
+        printf("%02x", pieces[i]);
+    }
+    cout << "\n";
   } else {
     cerr << "unknown command: " << command << endl;
     return 1;
