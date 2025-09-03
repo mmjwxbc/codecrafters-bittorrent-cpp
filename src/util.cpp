@@ -298,7 +298,7 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned in
     // send Request metadata
     unsigned char send_data[1024];
     send_data[4] = 20;
-    send_data[5] = metadata_id;
+    send_data[5] = 0;
     json object;
     object["msg_type"] = 0;
     object["piece"] = piece;
