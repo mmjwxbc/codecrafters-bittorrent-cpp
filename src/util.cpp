@@ -410,7 +410,6 @@ int handle_magnet_peers(const string announce_url, const string hash, vector<str
         << "&left=" << 999
         << "&compact=" << 1;
     string url = oss.str();
-    cout << oss.str() << endl;
     string response;
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
