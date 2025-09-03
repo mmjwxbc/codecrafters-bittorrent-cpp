@@ -354,20 +354,23 @@ struct Piece wait_block(const int sockfd) {
     size_t block_len = prefix_len - 9;
     cout << "block_len = " << block_len << endl;
     piece.data.assign(reinterpret_cast<const char*>(buf.data()) + 13, block_len);
-
+    cout << "piece data size = " << piece.data.size() << endl;
     return piece;
 }
 
 
 int write_to_file(char *filename, vector<struct Piece> &pieces) {
     ofstream file(filename, ios::binary);
+    size_t cnt = 0;
     if (!file) {
       cerr << "Failed to open file\n";
       return 1;
     }
     for(const auto &piece : pieces) {
       file.write(piece.data.c_str(), piece.data.size());
+      cnt += piece.data.size();
     }
-    cout << "success to write file" << endl;
+
+    cout << "success to write file size = " << cnt << endl;
     return 0;
 }
