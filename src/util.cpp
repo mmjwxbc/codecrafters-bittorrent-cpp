@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <sys/types.h>
 #include <vector>
 #include "util.hpp"
 #include <arpa/inet.h>   // sockaddr_in, inet_pton
@@ -321,12 +322,13 @@ struct Piece wait_block(const int sockfd) {
     Piece piece;
     static std::vector<uint8_t> buf;
 
-    read_nbytes(sockfd, buf, 4);
+    while(buf.size() < 4) read_nbytes(sockfd, buf, 4);
+
     uint32_t prefix_len_network;
     memcpy(&prefix_len_network, buf.data(), 4);
     uint32_t prefix_len = ntohl(prefix_len_network);
 
-    read_nbytes(sockfd, buf, 4 + prefix_len);
+    while(buf.size() < 4 + prefix_len) read_nbytes(sockfd, buf, 4 + prefix_len);
 
     if (prefix_len < 1) {
       cout << "invalid message length" << endl;
