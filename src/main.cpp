@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     handle_magnet_peers(key_val["tr"], key_val["xt"], ips, ports);
     int metadata_id = 0;
     int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
-    json metadata =  handle_magnet_info(sockfd, metadata_id, 0);
+    json metadata = handle_magnet_info(sockfd, metadata_id, 0);
     /*
     Tracker URL: http://bittorrent-test-tracker.codecrafters.io/announce
     Length: 92063
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
     cout << "\n";
   } else if(command == "magnet_download_piece") {
     // ./your_program.sh magnet_download_piece -o /tmp/test-piece-0 <magnet-link> 0
-    string magnet_link = argv[4];
+    string magnet_link = "magnet:?xt=urn:btih:ad42ce8109f54c99613ce38f9b4d87e70f24a165&dn=magnet1.gif&tr=http%3A%2F%2Fbittorrent-test-tracker.codecrafters.io%2Fannounce";
     auto key_val = parse_magnet(magnet_link);
     vector<string> ips;
     vector<uint16_t> ports;

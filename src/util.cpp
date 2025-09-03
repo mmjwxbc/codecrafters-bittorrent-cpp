@@ -274,22 +274,20 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
 
     metadata_id = extension_object["m"]["ut_metadata"].get<int>();
 
-    // // send interest message
-    // msg_len = htonl(1); // length prefix = 1 (ID only)
-    // memcpy(send_data, &msg_len, 4);   // 前四字节 = length
-    // send_data[4] = 2;                 // message ID = 2 (interest)
+    // // send interest message (required before requesting blocks)
+    // uint32_t msg_len_interest = htonl(1); // length prefix = 1 (ID only)
+    // memcpy(send_data, &msg_len_interest, 4);
+    // send_data[4] = 2; // interested
     // send(sockfd, send_data, 5, 0);
 
-    // // cout << "before recv unchoke = " << recv_buf.size() << endl;
-    // // recv unchoke message
+    // // recv unchoke message (peer should unchoke us)
     // n = read_nbytes(sockfd, recv_buf, 5);
-    // // cout << "before after unchoke = " << recv_buf.size() << endl;
     // memcpy(&prefix_len, recv_buf.data(), 4);
     // prefix_len = ntohl(prefix_len);
-    // // cout << "unchoke message length = " << prefix_len << endl;
     // recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
-    // if(prefix_len > 1) {
+    // if (prefix_len > 1) {
     //   read_nbytes(sockfd, recv_buf, prefix_len - 1);
+    //   recv_buf.erase(recv_buf.begin(), recv_buf.begin() + (prefix_len - 1));
     // }
     return sockfd;
 }
@@ -298,7 +296,7 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned in
     // send Request metadata
     unsigned char send_data[1024];
     send_data[4] = 20;
-    send_data[5] = 0;
+    send_data[5] = metadata_id; // use ut_metadata extended message id from peer
     json object;
     object["msg_type"] = 0;
     object["piece"] = piece;
@@ -339,7 +337,7 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned in
     //   }
     //   begin++;
     // }
-    cout << "begin = " << begin << " begin char = " << s[begin] <<  endl;
+    cout << "begin = " << begin << " begin char = " << s[begin]  <<  endl;
     json metadata_object = decode_bencoded_value(s, begin);
     metadata_object = decode_bencoded_value(s, begin);
     cout << "dump" << endl;
