@@ -252,7 +252,7 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     json object;
     object["m"]["ut_metadata"] = 16;
     string object_str = encode_bencode_value(object);
-    uint32_t msg_len = htonl(1 + object_str.size()); // length prefix = 1 (ID only)
+    uint32_t msg_len = htonl(2 + object_str.size()); // length prefix = 1 (ID only)
     memcpy(send_data, &msg_len, 4);
     memcpy(send_data + 6, object_str.c_str(), object_str.size());
     send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0);
