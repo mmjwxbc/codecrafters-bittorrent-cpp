@@ -179,6 +179,17 @@ int handle_handshake(const string ip, const uint16_t port, const string info_val
     return sockfd;
 }
 
+std::vector<uint8_t> hex_to_bytes(const std::string& hex) {
+    std::vector<uint8_t> bytes;
+    bytes.reserve(hex.size() / 2);
+    for (size_t i = 0; i < hex.size(); i += 2) {
+        std::string byte_string = hex.substr(i, 2);
+        uint8_t byte = static_cast<uint8_t>(std::stoi(byte_string, nullptr, 16));
+        bytes.push_back(byte);
+    }
+    return bytes;
+}
+
 
 int handle_magnet_handshake(const string ip, const uint16_t port, const string hash) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -200,12 +211,13 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
         return -1;
     }
     if(sockfd < 0) return -1;
+    vector<uint8_t> actual_hash = hex_to_bytes(hash);
     char send_data[68] = {0};
     memset(send_data, 0, sizeof(send_data));
     send_data[0] = 19;
     memcpy(send_data + 1,  "BitTorrent protocol", 19);   // 协议名是 ASCII，可以 memcpy
     send_data[25] = 16;
-    memcpy(send_data + 28, hash.c_str(), SHA_DIGEST_LENGTH);     // 二进制：必须 memcpy
+    memcpy(send_data + 28, actual_hash.data(), SHA_DIGEST_LENGTH);     // 二进制：必须 memcpy
     memcpy(send_data + 48, "abcdefghijklmnoptrst", 20);  // 即便是 ASCII，用 memcpy 更直观
     send(sockfd, send_data, 68, 0);
     vector<uint8_t> recv_buf;
@@ -306,6 +318,7 @@ int handle_peers(const json &torrent, vector<string> &ips, vector<uint16_t> &por
         << "&left=" << length
         << "&compact=" << 1;
     string url = oss.str();
+    cout << oss.str() << endl;
     string response;
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -338,6 +351,16 @@ int handle_peers(const json &torrent, vector<string> &ips, vector<uint16_t> &por
     return 0;
 }
 
+std::string url_encode_bin(const std::vector<uint8_t>& data) {
+    static const char hex[] = "0123456789ABCDEF";
+    std::ostringstream oss;
+    for (uint8_t b : data) {
+        oss << '%' << hex[b >> 4] << hex[b & 0xF];
+    }
+    return oss.str();
+}
+
+
 int handle_magnet_peers(const string announce_url, const string hash, vector<string> &ips, vector<uint16_t> &ports) {
     CURL *curl;
     CURLcode result;
@@ -349,15 +372,18 @@ int handle_magnet_peers(const string announce_url, const string hash, vector<str
     string peer_id = "abcdefghijklmnoptrst";
     int64_t length = 999;
     ostringstream oss;
+    vector<uint8_t> actual_hash = hex_to_bytes(hash);
+    string hash_escaped = url_encode_bin(actual_hash);
     oss << announce_url
-        << "?info_hash=" << curl_easy_escape(curl, hash.c_str(), SHA_DIGEST_LENGTH)
+        << "?info_hash=" << hash_escaped
         << "&peer_id="   << curl_easy_escape(curl, peer_id.c_str(), peer_id.length())
         << "&port="      << 6881
         << "&uploaded=" << 0
         << "&downloaded=" << 0
-        << "&left=" << length
+        << "&left=" << 999
         << "&compact=" << 1;
     string url = oss.str();
+    cout << oss.str() << endl;
     string response;
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -367,6 +393,7 @@ int handle_magnet_peers(const string announce_url, const string hash, vector<str
       cerr << "curl_easy_perform() failed" << endl;
       return -1;
     }
+    cout << "response = " << response.size() << endl;
     size_t begin = 0;
     json content = decode_bencoded_value(response, begin);
     string peers = content.at("peers").get<string>();
