@@ -122,6 +122,7 @@ int main(int argc, char *argv[]) {
     if(piece_index >= piece_count) {
       throw runtime_error("Invalid piece index: " + to_string(piece_index));
     }
+    cout << "piece count = " << piece_count << endl;
     int block_count = ceil(piece_length / 16384);
     vector<struct Piece> pieces;
     for(int i = 0; i < block_count; i++) {
