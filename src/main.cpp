@@ -230,17 +230,15 @@ int main(int argc, char *argv[]) {
     int metadata_id = 0;
     int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
     unsigned piece_index = atoi(argv[5]);
-    cout << "Fuck" << endl;
-    cout << "metadata_id = " << metadata_id << endl;
+    cout << "download piece: " << piece_index << "\n";
     json metadata = handle_magnet_info(sockfd, metadata_id, piece_index);
     int64_t piece_length = metadata.at("piece length").get<int64_t>();
     int64_t length = metadata.at("length").get<int64_t>();
-    // cout << "download piece: " << piece_index << "\n";
-    // cout << "Tracker URL: " << key_val["tr"] << "\n";
-    // cout << "Length: " << metadata.at("length") << "\n";
-    // cout << "Info Hash: " << key_val["xt"] << "\n";
-    // cout << "Piece Length: " <<  metadata.at("piece length") << "\n";
-    // cout << "Piece Hashes:" << "\n";
+    cout << "Tracker URL: " << key_val["tr"] << "\n";
+    cout << "Length: " << metadata.at("length") << "\n";
+    cout << "Info Hash: " << key_val["xt"] << "\n";
+    cout << "Piece Length: " <<  metadata.at("piece length") << "\n";
+    cout << "Piece Hashes:" << "\n";
     string hashes  = metadata.at("pieces").get<string>();
     vector<uint8_t> pieces_tmp(hashes.begin(), hashes.end());
     for (size_t i = 0; i < pieces_tmp.size(); ++i) {
