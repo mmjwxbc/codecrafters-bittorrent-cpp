@@ -264,8 +264,9 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     // cout << "after recv bitfied = " << recv_buf.size() << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
     prefix_len = ntohl(prefix_len);
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
     read_nbytes(sockfd, recv_buf, prefix_len);
-    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 6);
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 1);
     size_t begin = 0;
     std::string s(recv_buf.begin(), recv_buf.end());
     cout << prefix_len << endl;
