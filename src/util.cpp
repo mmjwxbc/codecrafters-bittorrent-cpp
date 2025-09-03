@@ -310,6 +310,7 @@ int handle_magnet_info(const int sockfd, unsigned char metadata_id) {
     memcpy(send_data, &msg_len, 4);
     memcpy(send_data + 6, object_str.c_str(), object_str.size());
     send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0);
+    return 0;
 }
 
 int handle_wave(const int sockfd) {
