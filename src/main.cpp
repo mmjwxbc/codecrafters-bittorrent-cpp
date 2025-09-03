@@ -220,6 +220,34 @@ int main(int argc, char *argv[]) {
         printf("%02x", pieces[i]);
     }
     cout << "\n";
+  } else if(command == "magnet_download_piece") {
+    // ./your_program.sh magnet_download_piece -o /tmp/test-piece-0 <magnet-link> 0
+    string magnet_link = argv[4];
+    auto key_val = parse_magnet(magnet_link);
+    vector<string> ips;
+    vector<uint16_t> ports;
+    handle_magnet_peers(key_val["tr"], key_val["xt"], ips, ports);
+    unsigned char metadata_id = 0;
+    int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
+    json metadata =  handle_magnet_info(sockfd, metadata_id);
+    unsigned piece_index = atoi(argv[5]);
+    int64_t piece_length = metadata.at("piece length").get<int64_t>();
+    int64_t length = metadata.at("length").get<int64_t>();
+
+    int piece_cnt = (length + piece_length) / piece_length;
+    int cur_piece_length = (piece_index + 1 == piece_cnt) ? length - (piece_index) * piece_length : piece_length;
+    int block_count = (cur_piece_length + 16383) / 16384;
+    // cout << "block_count = " << block_count << endl;
+    vector<struct Piece> pieces;
+    for(int i = 0; i < block_count; i++) {
+      int cur_length = (i == block_count - 1) ? cur_piece_length - (i) * 16384 : 16384;
+      unsigned begin_index = i * 16384;
+      download_block(sockfd, piece_index, begin_index, cur_length);
+      struct Piece piece = wait_block(sockfd);
+      pieces.emplace_back(piece);
+    }
+    
+    return write_to_file(argv[3], pieces) && handle_wave(sockfd);
   } else {
     cerr << "unknown command: " << command << endl;
     return 1;
