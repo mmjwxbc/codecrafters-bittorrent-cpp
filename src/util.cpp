@@ -306,7 +306,10 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned in
     unsigned int msg_len = htonl(2 + object_str.size()); // length prefix = 1 (ID only)
     memcpy(send_data, &msg_len, 4);
     memcpy(send_data + 6, object_str.c_str(), object_str.size());
-    send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0);
+    if(send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0) != 4 + 1 + 1 + object_str.size()) {
+      cout << "fuck send" << endl;
+      return object;
+    }
 
 
     // recv metadata
