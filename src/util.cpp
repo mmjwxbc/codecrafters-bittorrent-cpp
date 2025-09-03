@@ -273,23 +273,23 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
     cout << "Peer Metadata Extension ID: " << extension_object["m"]["ut_metadata"] << endl;
 
-    // send interest message
-    msg_len = htonl(1); // length prefix = 1 (ID only)
-    memcpy(send_data, &msg_len, 4);   // 前四字节 = length
-    send_data[4] = 2;                 // message ID = 2 (interest)
-    send(sockfd, send_data, 5, 0);
+    // // send interest message
+    // msg_len = htonl(1); // length prefix = 1 (ID only)
+    // memcpy(send_data, &msg_len, 4);   // 前四字节 = length
+    // send_data[4] = 2;                 // message ID = 2 (interest)
+    // send(sockfd, send_data, 5, 0);
 
-    // cout << "before recv unchoke = " << recv_buf.size() << endl;
-    // recv unchoke message
-    n = read_nbytes(sockfd, recv_buf, 5);
-    // cout << "before after unchoke = " << recv_buf.size() << endl;
-    memcpy(&prefix_len, recv_buf.data(), 4);
-    prefix_len = ntohl(prefix_len);
-    // cout << "unchoke message length = " << prefix_len << endl;
-    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
-    if(prefix_len > 1) {
-      read_nbytes(sockfd, recv_buf, prefix_len - 1);
-    }
+    // // cout << "before recv unchoke = " << recv_buf.size() << endl;
+    // // recv unchoke message
+    // n = read_nbytes(sockfd, recv_buf, 5);
+    // // cout << "before after unchoke = " << recv_buf.size() << endl;
+    // memcpy(&prefix_len, recv_buf.data(), 4);
+    // prefix_len = ntohl(prefix_len);
+    // // cout << "unchoke message length = " << prefix_len << endl;
+    // recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
+    // if(prefix_len > 1) {
+    //   read_nbytes(sockfd, recv_buf, prefix_len - 1);
+    // }
     return sockfd;
 }
 
@@ -419,7 +419,7 @@ int handle_magnet_peers(const string announce_url, const string hash, vector<str
       cerr << "curl_easy_perform() failed" << endl;
       return -1;
     }
-    cout << "response = " << response.size() << endl;
+    // cout << "response = " << response.size() << endl;
     size_t begin = 0;
     json content = decode_bencoded_value(response, begin);
     string peers = content.at("peers").get<string>();
