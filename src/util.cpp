@@ -312,7 +312,7 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned in
 
     // recv metadata
     vector<uint8_t> recv_buf;
-    ssize_t n ;
+    ssize_t n = 0;
     unsigned int prefix_len;
     cout << "before recv metadata recv n = " << n << endl;
     n = read_nbytes(sockfd, recv_buf, 5);
