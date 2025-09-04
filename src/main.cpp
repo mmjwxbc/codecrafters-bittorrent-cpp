@@ -224,7 +224,6 @@ int main(int argc, char *argv[]) {
   } else if(command == "magnet_download_piece") {
     // ./your_program.sh magnet_download_piece -o /tmp/test-piece-0 <magnet-link> 0
     string magnet_link = argv[4];
-    magnet_link = "magnet:?xt=urn:btih:c5fb9894bdaba464811b088d806bdd611ba490af&dn=magnet3.gif&tr=http%3A%2F%2Fbittorrent-test-tracker.codecrafters.io%2Fannounce";
     auto key_val = parse_magnet(magnet_link);
     vector<string> ips;
     vector<uint16_t> ports;
