@@ -228,7 +228,7 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
       printf("%02x", static_cast<unsigned char>(recv_buf[48 + i]));
     }
     printf("\n");
-    printf("support extension : %d\n", recv_buf[25] == 16);
+    // printf("support extension : %d\n", recv_buf[25] == 16);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 68);
     // for(ssize_t i = 0; i < 20; i++) {
     //   printf("%02x", static_cast<unsigned char>(hash[i]));
@@ -327,9 +327,9 @@ json handle_magnet_info(const int sockfd, int metadata_id, unsigned int piece) {
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 1);
     size_t begin = 0;
     std::string s(recv_buf.begin(), recv_buf.end());
-    cout << prefix_len << endl;
-    cout << s.size() << endl;
-    cout << s << endl;
+    // cout << prefix_len << endl;
+    // cout << s.size() << endl;
+    // cout << s << endl;
     // json metadata_object = json::object();
     // if (s[begin] == 'd') {
     //   begin++;
@@ -489,7 +489,7 @@ int handle_magnet_peers(const string announce_url, const string hash, vector<str
         oss << int(ip1) << "." << int(ip2) << "." << int(ip3) << "." << int(ip4);
       ips.emplace_back(oss.str());
 
-      cout << oss.str() << ":" << port << endl;
+      // cout << oss.str() << ":" << port << endl;
     }
     curl_easy_cleanup(curl);
     return 0;
