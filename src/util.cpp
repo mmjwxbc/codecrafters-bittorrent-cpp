@@ -227,6 +227,7 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     for(ssize_t i = 0; i < 20 && i + 48 < n; i++) {
       printf("%02x", static_cast<unsigned char>(recv_buf[48 + i]));
     }
+    printf("support extension : %d\n", recv_buf[25] == 16);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 68);
     printf("\n");
     // for(ssize_t i = 0; i < 20; i++) {
