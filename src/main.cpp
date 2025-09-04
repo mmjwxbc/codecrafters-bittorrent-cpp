@@ -233,6 +233,7 @@ int main(int argc, char *argv[]) {
     unsigned piece_index = atoi(argv[5]);
     // cout << "download piece: " << piece_index << "\n";
     json metadata = handle_magnet_info(sockfd, metadata_id, piece_index);
+    handle_interest_msg(sockfd);
     int64_t piece_length = metadata.at("piece length").get<int64_t>();
     int64_t length = metadata.at("length").get<int64_t>();
     cout << "Tracker URL: " << key_val["tr"] << "\n";
