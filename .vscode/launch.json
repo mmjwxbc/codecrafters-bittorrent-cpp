@@ -8,7 +8,7 @@
             "program": "${workspaceFolder}/build/bittorrent",
             // "args": ["download_piece", "-o", "./", "sample.torrent", "1"],
             // "args": ["magnet_handshake"],
-            "args": ["magnet_download_piece", "-o", "/tmp/torrents3914653291/piece-1" , "fuck", "1"],
+            "args": ["magnet_download_piece", "-o", "/tmp/torrents3914653291/piece-1" , "fuck", "0"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

@@ -293,18 +293,20 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     return sockfd;
 }
 
-json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned int piece) {
+json handle_magnet_info(const int sockfd, int metadata_id, unsigned int piece) {
+    // cout << "handle_magnet_info metadata_id = " << metadata_id << endl;
     // send Request metadata
     unsigned char send_data[1024];
+    memset(send_data, 0, sizeof(send_data));
     send_data[4] = 20;
-    send_data[5] = 25; // use ut_metadata extended message id from peer
+    send_data[5] = metadata_id; // use ut_metadata extended message id from peer
     json object;
     object["msg_type"] = 0;
-    object["piece"] = piece;
+    object["piece"] = 0;
     string object_str = encode_bencode_value(object);
     unsigned int msg_len = htonl(2 + object_str.size()); // length prefix = 1 (ID only)
     memcpy(send_data, &msg_len, 4);
-    memcpy(send_data + 6, object_str.c_str(), object_str.size());
+    memcpy(send_data + 6, object_str.data(), object_str.size());
     if(send(sockfd, send_data, 4 + 1 + 1 + object_str.size(), 0) != 4 + 1 + 1 + object_str.size()) {
       cout << "fuck send" << endl;
       return object;
@@ -315,9 +317,9 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned in
     vector<uint8_t> recv_buf;
     ssize_t n = 0;
     unsigned int prefix_len;
-    cout << "before recv metadata recv n = " << n << endl;
+    // cout << "before recv metadata recv n = " << n << endl;
     n = read_nbytes(sockfd, recv_buf, 5);
-    cout << "recv n = " << n << endl;
+    // cout << "recv n = " << n << endl;
     memcpy(&prefix_len, recv_buf.data(), 4);
     prefix_len = ntohl(prefix_len);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
@@ -338,10 +340,10 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned in
     //   }
     //   begin++;
     // }
-    cout << "begin = " << begin << " begin char = " << s[begin]  <<  endl;
+    // cout << "begin = " << begin << " begin char = " << s[begin]  <<  endl;
     json metadata_object = decode_bencoded_value(s, begin);
     metadata_object = decode_bencoded_value(s, begin);
-    cout << "dump" << endl;
+    // cout << "dump" << endl;
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
     return metadata_object;
 }
