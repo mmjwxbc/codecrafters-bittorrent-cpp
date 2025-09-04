@@ -274,6 +274,7 @@ int main(int argc, char *argv[]) {
     int metadata_id = 0;
     int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
     json metadata =  handle_magnet_info(sockfd, metadata_id, 0);
+    handle_interest_msg(sockfd);
     int64_t piece_length = metadata.at("piece length").get<int64_t>();
     int64_t length = metadata.at("length").get<int64_t>();
     vector<struct Piece> pieces;
