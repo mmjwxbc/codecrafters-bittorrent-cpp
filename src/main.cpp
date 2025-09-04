@@ -273,12 +273,24 @@ int main(int argc, char *argv[]) {
     handle_magnet_peers(key_val["tr"], key_val["xt"], ips, ports);
     int metadata_id = 0;
     int sockfd = handle_magnet_handshake(ips[0], ports[0], key_val["xt"], metadata_id);
-    unsigned piece_index = atoi(argv[5]);
-    cout << "Fuck" << endl;
-    cout << "metadata_id = " << metadata_id << endl;
     json metadata =  handle_magnet_info(sockfd, metadata_id, 0);
     int64_t piece_length = metadata.at("piece length").get<int64_t>();
     int64_t length = metadata.at("length").get<int64_t>();
+    vector<struct Piece> pieces;
+    int piece_cnt = (length + piece_length) / piece_length;
+    for(int p = 0; p < piece_cnt; p++) {
+      int cur_piece_length = (p + 1 == piece_cnt) ? length - (p) * piece_length : piece_length;
+      int block_count = (cur_piece_length + 16383) / 16384;
+      // cout << "block_count = " << block_count << endl;
+      for(int b = 0; b < block_count; b++) {
+        int cur_length = (b == block_count - 1) ? cur_piece_length - (b) * 16384 : 16384;
+        unsigned begin_index = b * 16384;
+        download_block(sockfd, p, begin_index, cur_length);
+        struct Piece piece = wait_block(sockfd);
+        pieces.emplace_back(std::move(piece));
+      }
+    }
+    return write_to_file(argv[3], pieces) && handle_wave(sockfd);
   } else {
     cerr << "unknown command: " << command << endl;
     return 1;
