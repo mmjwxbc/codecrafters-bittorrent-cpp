@@ -227,9 +227,9 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     for(ssize_t i = 0; i < 20 && i + 48 < n; i++) {
       printf("%02x", static_cast<unsigned char>(recv_buf[48 + i]));
     }
+    printf("\n");
     printf("support extension : %d\n", recv_buf[25] == 16);
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 68);
-    printf("\n");
     // for(ssize_t i = 0; i < 20; i++) {
     //   printf("%02x", static_cast<unsigned char>(hash[i]));
     // }
@@ -251,7 +251,7 @@ int handle_magnet_handshake(const string ip, const uint16_t port, const string h
     send_data[4] = 20;
     send_data[5] = 0;
     json object;
-    object["m"]["ut_metadata"] = 16;
+    object["m"]["ut_metadata"] = 25;
     string object_str = encode_bencode_value(object);
     uint32_t msg_len = htonl(2 + object_str.size()); // length prefix = 1 (ID only)
     memcpy(send_data, &msg_len, 4);
@@ -297,7 +297,7 @@ json handle_magnet_info(const int sockfd, unsigned char metadata_id, unsigned in
     // send Request metadata
     unsigned char send_data[1024];
     send_data[4] = 20;
-    send_data[5] = metadata_id; // use ut_metadata extended message id from peer
+    send_data[5] = 25; // use ut_metadata extended message id from peer
     json object;
     object["msg_type"] = 0;
     object["piece"] = piece;
