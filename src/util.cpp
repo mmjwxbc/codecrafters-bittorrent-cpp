@@ -345,6 +345,25 @@ json handle_magnet_info(const int sockfd, int metadata_id, unsigned int piece) {
     metadata_object = decode_bencoded_value(s, begin);
     // cout << "dump" << endl;
     recv_buf.erase(recv_buf.begin(), recv_buf.begin() + prefix_len - 2);
+
+    recv_buf.clear();
+    // send interest message
+    msg_len = htonl(1); // length prefix = 1 (ID only)
+    memcpy(send_data, &msg_len, 4);   // 前四字节 = length
+    send_data[4] = 2;                 // message ID = 2 (interest)
+    send(sockfd, send_data, 5, 0);
+
+    // cout << "before recv unchoke = " << recv_buf.size() << endl;
+    // recv unchoke message
+    n = read_nbytes(sockfd, recv_buf, 5);
+    // cout << "before after unchoke = " << recv_buf.size() << endl;
+    memcpy(&prefix_len, recv_buf.data(), 4);
+    prefix_len = ntohl(prefix_len);
+    // cout << "unchoke message length = " << prefix_len << endl;
+    recv_buf.erase(recv_buf.begin(), recv_buf.begin() + 5);
+    if(prefix_len > 1) {
+      read_nbytes(sockfd, recv_buf, prefix_len - 1);
+    }
     return metadata_object;
 }
 
